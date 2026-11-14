@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChartVision SMC — Analyse TradingView</title>
+<style>
+  :root{
+    --bg:#0b0e14;--panel:#131722;--panel2:#1a1f2c;--panel3:#222836;
+    --line:#232c3d;--line2:#2f3a52;
+    --txt:#d1d4dc;--muted:#8b94a8;--dim:#5d6577;
+    --acc:#2962ff;--up:#26a69a;--down:#ef5350;--warn:#ff9800;--info:#ab47bc;
+    --ob:#f9a825;--fvg:#26c6da;--liq:#ab47bc;--bos:#66bb6a;
+  }
+  *{box-sizing:border-box}html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,Arial,sans-serif;font-size:13.5px;-webkit-font-smoothing:antialiased;overflow:hidden}
+  ::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#2f3a52;border-radius:5px;border:2px solid var(--bg)}
+  header{height:54px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:#0e1219;position:relative;z-index:10;flex-wrap:wrap}
+  .logo{width:28px;height:28px;border-radius:6px;flex-shrink:0;background:linear-gradient(135deg,#2962ff,#26a69a);position:relative}
+  .logo::after{content:"";position:absolute;inset:5px;border-radius:2px;background:#0b0e14}
+  header h1{font-size:14.5px;margin:0;font-weight:700;white-space:nowrap}
+  header h1 span{color:var(--acc)}
+  .hdr-fields{display:flex;gap:6px;align-items:center;margin-left:10px;flex-wrap:wrap}
+  .hdr-fields select,.hdr-fields input{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:5px;padding:5px 9px;font-size:12px;font-family:inherit;outline:none;height:27px}
+  .hdr-fields input[type=text]{width:100px}
+  .hdr-fields input:focus,.hdr-fields select:focus{border-color:var(--acc)}
+  .hdr-actions{margin-left:auto;display:flex;gap:6px}
+  .hdr-actions button{background:transparent;border:1px solid var(--line);color:var(--muted);padding:5px 11px;border-radius:5px;font-size:11.5px;cursor:pointer;font-family:inherit;height:27px}
+  .hdr-actions button:hover{background:var(--panel2);color:var(--txt)}
+  .hdr-actions button:disabled{opacity:.35;cursor:not-allowed}
+  .app{display:grid;grid-template-columns:280px 1fr 480px;height:calc(100vh - 54px)}
+  @media(max-width:1280px){.app{grid-template-columns:260px 1fr 420px}}
+  @media(max-width:960px){.app{grid-template-columns:1fr;height:auto;overflow-y:auto}body{overflow:auto}header{position:sticky;top:0}}
+  .panel{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;display:flex;flex-direction:column}
+  .panel:last-child{border-right:none;border-left:1px solid var(--line)}
+  .panel.center{border-right:1px solid var(--line);background:#070a10}
+  .sect{padding:13px 14px;border-bottom:1px solid var(--line)}
+  .sect:last-child{border-bottom:none}
+  .sect h2{font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);margin:0 0 9px;font-weight:700;display:flex;align-items:center;gap:6px}
+  .sect h2 .num{display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center;background:var(--panel3);border-radius:3px;font-size:9.5px;color:var(--muted);font-weight:800}
+  .drop{border:2px dashed var(--line2);border-radius:8px;padding:20px 12px;text-align:center;color:var(--muted);cursor:pointer;transition:.18s;font-size:12.5px;line-height:1.55}
+  .drop:hover,.drop.hot{border-color:var(--acc);color:var(--txt);background:rgba(41,98,255,.06)}
+  .drop svg{margin-bottom:6px;opacity:.6}
+  .drop b{color:var(--txt)}
+  input[type=file]{display:none}
+  label.fld{display:block;font-size:10px;color:var(--dim);margin:9px 0 3px;text-transform:uppercase;letter-spacing:.7px;font-weight:600}
+  input[type=text],input[type=number],select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:5px;padding:7px 10px;font-size:12.5px;font-family:inherit;outline:none}
+  input:focus,select:focus{border-color:var(--acc)}
+  input::placeholder{color:var(--dim)}
+  .row{display:flex;gap:8px}.row>*{flex:1;min-width:0}
+  button.btn{width:100%;border:1px solid var(--line);border-radius:6px;padding:9px 12px;font-weight:600;font-size:12.5px;cursor:pointer;font-family:inherit;background:var(--panel2);color:var(--txt);margin-top:7px;display:flex;align-items:center;justify-content:center;gap:6px}
+  button.btn:hover{background:var(--panel3)}
+  button.btn:disabled{opacity:.4;cursor:not-allowed}
+  button.btn.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+  button.btn.primary:hover{filter:brightness(1.1)}
+  button.btn.ghost{background:transparent}
+  button.btn.active{background:var(--up);color:#04121f;border-color:var(--up);font-weight:700}
+  .note{font-size:11px;color:var(--dim);line-height:1.5;margin-top:8px}
+  .warnbox{background:rgba(255,152,0,.07);border:1px solid rgba(255,152,0,.25);color:#ffb74d;padding:8px 10px;border-radius:6px;font-size:11px;line-height:1.5;margin-top:10px}
+  .okbox{background:rgba(38,166,154,.08);border:1px solid rgba(38,166,154,.28);color:#4dd0c4;padding:8px 10px;border-radius:6px;font-size:11px;line-height:1.5;margin-top:8px}
+  .calib-steps{background:rgba(41,98,255,.06);border:1px solid rgba(41,98,255,.25);color:#7ea6ff;padding:9px 11px;border-radius:6px;font-size:11.5px;line-height:1.5;margin-top:8px}
+  .chart-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:14px;position:relative}
+  .canvas-inner{position:relative;line-height:0;display:none}
+  canvas{display:block;max-width:100%;height:auto}
+  #overlay{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+  .empty-chart{color:var(--dim);text-align:center;padding:40px 20px;font-size:13px;line-height:1.6}
+  .chart-toolbar{padding:9px 14px;border-top:1px solid var(--line);background:var(--panel);display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px}
+  .chart-toolbar label{color:var(--muted);display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer;user-select:none}
+  .chart-toolbar input[type=range]{width:90px;accent-color:var(--acc)}
+  .chart-toolbar .sep{width:1px;height:16px;background:var(--line)}
+  .chart-toolbar .status{margin-left:auto;color:var(--dim);font-weight:600}
+  .tabs{display:flex;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+  .tab{flex:1;padding:11px 4px;background:transparent;border:none;color:var(--muted);font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;text-transform:uppercase;letter-spacing:.4px}
+  .tab:hover{color:var(--txt)}
+  .tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+  .results{flex:1;overflow-y:auto;padding:14px 15px;font-size:13px;line-height:1.6}
+  .results h2{font-size:12.5px;border-bottom:1px solid var(--line);padding-bottom:6px;margin:16px 0 8px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  .results h3{font-size:12.5px;color:var(--acc);margin:13px 0 6px}
+  .results p{margin:7px 0}
+  .results ul,.results ol{padding-left:19px;margin:5px 0}
+  .results li{margin:3px 0}
+  .results code{background:var(--panel3);padding:1px 6px;border-radius:3px;font-size:11px;font-family:ui-monospace,monospace;color:#63a4ff}
+  .results strong{color:#fff}
+  .results hr{border:none;border-top:1px solid var(--line);margin:14px 0}
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}
+  .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px 11px;position:relative;overflow:hidden}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--dim)}
+  .kpi.up::before{background:var(--up)}.kpi.down::before{background:var(--down)}.kpi.neu::before{background:var(--warn)}.kpi.info::before{background:var(--acc)}
+  .kpi small{display:block;color:var(--dim);font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:2px}
+  .kpi b{display:block;font-size:14px;font-weight:700;line-height:1.2}
+  .kpi .sub{font-size:10px;color:var(--dim);margin-top:1px;font-weight:400}
+  .up-text{color:var(--up)}.down-text{color:var(--down)}.neu-text{color:var(--warn)}
+  .setup{border-radius:8px;padding:13px;margin-bottom:10px;border:1px solid var(--line);background:var(--panel2);position:relative;overflow:hidden}
+  .setup.buy{border-color:rgba(38,166,154,.4);background:linear-gradient(180deg,rgba(38,166,154,.07),var(--panel2))}
+  .setup.sell{border-color:rgba(239,83,80,.4);background:linear-gradient(180deg,rgba(239,83,80,.07),var(--panel2))}
+  .setup.wait{border-color:rgba(255,152,0,.4);background:linear-gradient(180deg,rgba(255,152,0,.07),var(--panel2))}
+  .setup-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:9px;border-bottom:1px solid var(--line);gap:8px;flex-wrap:wrap}
+  .setup-head h3{margin:0;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:7px}
+  .setup.buy .setup-head h3{color:var(--up)}.setup.sell .setup-head h3{color:var(--down)}.setup.wait .setup-head h3{color:var(--warn)}
+  .setup-head .conf{font-size:10px;color:var(--muted);padding:3px 8px;background:var(--panel3);border-radius:20px;font-weight:600}
+  .setup-head .conf.good{background:rgba(38,166,154,.15);color:var(--up)}
+  .trade-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px}
+  .trade-cell{background:rgba(0,0,0,.22);border-radius:5px;padding:7px 9px;border:1px solid var(--line)}
+  .trade-cell small{display:block;font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+  .trade-cell b{font-size:13px;font-family:ui-monospace,monospace;font-weight:700;display:block}
+  .trade-cell.entry b{color:var(--acc)}.trade-cell.sl b{color:var(--down)}.trade-cell.tp b{color:var(--up)}.trade-cell.rr b{color:var(--warn)}
+  .rr-bar{height:4px;background:var(--panel3);border-radius:2px;overflow:hidden;margin:5px 0 3px;display:flex}
+  .rr-bar .risk{background:var(--down)}.rr-bar .reward{background:var(--up)}
+  .trade-reason{font-size:11px;color:var(--muted);line-height:1.5;padding:7px 9px;background:rgba(0,0,0,.18);border-radius:5px;border-left:2px solid var(--acc);margin-top:8px}
+  .trade-reason strong{color:var(--txt)}
+  .confluence{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+  .tag{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--panel3);border:1px solid var(--line2);color:var(--muted);font-weight:600}
+  .tag.on{background:rgba(38,166,154,.15);border-color:rgba(38,166,154,.35);color:var(--up)}
+  .scenario{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:10px 11px;margin-bottom:7px;display:flex;gap:10px;align-items:flex-start}
+  .scenario .prob{flex-shrink:0;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;background:conic-gradient(var(--acc) var(--p),var(--panel3) 0);color:var(--txt);position:relative}
+  .scenario .prob::before{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--panel2)}
+  .scenario .prob span{position:relative;z-index:1}
+  .scenario.up .prob{background:conic-gradient(var(--up) var(--p),var(--panel3) 0)}
+  .scenario.down .prob{background:conic-gradient(var(--down) var(--p),var(--panel3) 0)}
+  .scenario.neu .prob{background:conic-gradient(var(--warn) var(--p),var(--panel3) 0)}
+  .scenario .body{flex:1;min-width:0}
+  .scenario .body h4{margin:0 0 3px;font-size:12px;font-weight:700}
+  .scenario.up .body h4{color:var(--up)}.scenario.down .body h4{color:var(--down)}.scenario.neu .body h4{color:var(--warn)}
+  .scenario .body p{margin:0;font-size:11px;color:var(--muted);line-height:1.45}
+  .smc-block{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px 11px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start}
+  .smc-block .icon{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+  .smc-block.ob-bull .icon{background:rgba(38,166,154,.15);color:var(--up)}
+  .smc-block.ob-bear .icon{background:rgba(239,83,80,.15);color:var(--down)}
+  .smc-block.fvg-bull .icon{background:rgba(38,198,218,.15);color:var(--fvg)}
+  .smc-block.fvg-bear .icon{background:rgba(38,198,218,.15);color:var(--fvg)}
+  .smc-block.liq .icon{background:rgba(171,71,188,.15);color:var(--liq)}
+  .smc-block.bos .icon{background:rgba(102,187,106,.15);color:var(--bos)}
+  .smc-block .content{flex:1;min-width:0;font-size:11.5px;line-height:1.5}
+  .smc-block .content strong{display:block;color:var(--txt);font-size:12px;margin-bottom:2px}
+  .smc-block .content .meta{color:var(--dim);font-size:10.5px}
+  .smc-block .zone{font-family:ui-monospace,monospace;color:var(--acc);font-weight:700}
+  .level-row{display:flex;align-items:center;gap:9px;padding:6px 9px;background:var(--panel2);border-radius:5px;margin-bottom:4px;border:1px solid var(--line);font-size:12px}
+  .level-row .price{font-family:ui-monospace,monospace;font-weight:700;min-width:80px;font-size:12.5px}
+  .level-row .type{font-size:10.5px;color:var(--dim);flex:1}
+  .level-row .strength{width:46px;height:3px;background:var(--panel3);border-radius:2px;overflow:hidden}
+  .level-row .strength div{height:100%;background:linear-gradient(90deg,var(--warn),var(--down))}
+  .level-row.resistance .price{color:var(--down)}
+  .level-row.support .price{color:var(--up)}
+  .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .progress{height:3px;background:var(--panel3);border-radius:2px;overflow:hidden;margin-top:7px;display:none}
+  .progress.on{display:block}
+  .progress div{height:100%;background:linear-gradient(90deg,var(--acc),var(--up));width:0;transition:width .2s;border-radius:2px}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal-backdrop.on{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line2);border-radius:10px;max-width:680px;width:100%;max-height:80vh;overflow-y:auto;padding:22px}
+  .modal h2{margin:0 0 12px;font-size:16px}
+  .modal h3{font-size:13px;color:var(--acc);margin:14px 0 5px}
+  .modal p,.modal li{font-size:12.5px;line-height:1.6;color:var(--muted)}
+  .modal ul{padding-left:19px}
+  .modal .close{float:right;background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0;line-height:1}
+  .modal .close:hover{color:var(--txt)}
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"></div>
+  <h1>Chart<span>Vision</span> SMC</h1>
+  <div class="hdr-fields">
+    <select id="assetType" title="Type d'actif">
+      <option value="auto">🔍 Auto</option>
+      <option value="crypto">₿ Crypto</option>
+      <option value="forex">💱 Forex</option>
+      <option value="stocks">📈 Actions</option>
+      <option value="indices">📊 Indices</option>
+      <option value="commodities">🛢 Mat. prem.</option>
+    </select>
+    <input type="text" id="symbol" placeholder="Symbole" maxlength="20">
+    <input type="text" id="timeframe" placeholder="TF" style="width:55px" maxlength="4">
+  </div>
+  <div class="hdr-actions">
+    <button id="btnExport" disabled>⬇ Rapport</button>
+    <button id="btnHelp">? Aide</button>
+  </div>
+</header>
+
+<div class="app">
+
+  <aside class="panel">
+    <div class="sect">
+      <h2><span class="num">1</span>Screenshot TradingView</h2>
+      <div class="drop" id="drop">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+        </svg>
+        <div><b>Cliquez</b> ou <b>glissez</b></div>
+        <div style="font-size:10.5px;margin-top:3px;color:var(--dim)">ou Ctrl+V</div>
+      </div>
+      <input type="file" id="file" accept="image/*">
+      <button class="btn ghost" id="btnClear" disabled>Effacer</button>
+    </div>
+
+    <div class="sect">
+      <h2><span class="num">2</span>Calibration prix</h2>
+      <button class="btn primary" id="btnClick" disabled>🎯 Calibrer au clic</button>
+      <button class="btn ghost" id="btnOCR" disabled>🔍 Lire l'axe (OCR)</button>
+      <div class="progress" id="ocrProgress"><div></div></div>
+      <div class="calib-steps hidden" id="calibSteps">
+        <strong>Mode clic actif</strong><br>
+        1. Cliquez sur un label de prix de l'axe<br>
+        2. Saisissez la valeur<br>
+        3. Recommencez sur un second label<br>
+        <span id="calibState">Point 1/2 en attente…</span>
+      </div>
+      <details style="margin-top:9px">
+        <summary style="cursor:pointer;color:var(--muted);font-size:11px;padding:3px 0">Saisie manuelle</summary>
+        <div class="row" style="margin-top:7px">
+          <div><label class="fld">Prix haut</label><input type="number" id="pTop" step="any" placeholder=""></div>
+          <div><label class="fld">Prix bas</label><input type="number" id="pBot" step="any" placeholder=""></div>
+        </div>
+      </details>
+      <div class="note" id="calStatus">Sans calibration : % de hauteur. Pour des prix exacts, utilisez <strong>Calibrer au clic</strong>.</div>
+    </div>
+
+    <div class="sect">
+      <h2><span class="num">3</span>Options SMC</h2>
+      <label style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);cursor:pointer;padding:4px 0">
+        <input type="checkbox" id="optOB" checked> Order Blocks
+      </label>
+      <label style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);cursor:pointer;padding:4px 0">
+        <input type="checkbox" id="optFVG" checked> Fair Value Gaps
+      </label>
+      <label style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);cursor:pointer;padding:4px 0">
+        <input type="checkbox" id="optLiq" checked> Liquidité / sweeps
+      </label>
+      <label style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);cursor:pointer;padding:4px 0">
+        <input type="checkbox" id="optBOS" checked> BOS / CHoCH
+      </label>
+      <label style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);cursor:pointer;padding:4px 0">
+        <input type="checkbox" id="optPD" checked> Premium / Discount
+      </label>
+    </div>
+
+    <details class="sect" style="padding:13px 14px">
+      <summary style="cursor:pointer;color:var(--muted);font-size:11px;font-weight:600">Analyse IA (optionnel)</summary>
+      <div style="margin-top:9px">
+        <label class="fld">Fournisseur</label>
+        <select id="provider">
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="gemini">Google Gemini</option>
+        </select>
+        <label class="fld">Modèle</label>
+        <input type="text" id="model" value="gpt-4o">
+        <label class="fld">Clé API</label>
+        <input type="password" id="apiKey" placeholder="facultatif">
+        <button class="btn primary" id="btnAI" disabled>✨ Analyser avec l'IA</button>
+        <button class="btn ghost" id="btnPrompt" disabled>📋 Copier le prompt</button>
+      </div>
+    </details>
+  </aside>
+
+  <main class="panel center">
+    <div class="chart-wrap" id="chartWrap">
+      <div class="empty-chart" id="emptyChart">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M3 3v18h18"/><path d="M7 15l3-3 3 3 5-6"/>
+        </svg>
+        <div>Chargez un screenshot TradingView</div>
+        <div style="font-size:11px;margin-top:3px;opacity:.7">Analyse SMC : Order Blocks · FVG · Liquidité · BOS/CHoCH</div>
+      </div>
+      <div class="canvas-inner" id="canvasInner">
+        <canvas id="cv"></canvas>
+        <canvas id="overlay"></canvas>
+      </div>
+    </div>
+    <div class="chart-toolbar">
+      <label>Zoom <input type="range" id="zoom" min="100" max="400" value="100"></label>
+      <span id="zoomVal" style="color:var(--dim)">100%</span>
+      <div class="sep"></div>
+      <label><input type="checkbox" id="showOB" checked> OB</label>
+      <label><input type="checkbox" id="showFVG" checked> FVG</label>
+      <label><input type="checkbox" id="showLiq" checked> Liq</label>
+      <label><input type="checkbox" id="showBOS" checked> BOS</label>
+      <label><input type="checkbox" id="showEntry" checked> Setup</label>
+      <div class="status" id="statusTxt">Prêt</div>
+    </div>
+  </main>
+
+  <aside class="panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="signal">Setup</button>
+      <button class="tab" data-tab="smc">SMC</button>
+      <button class="tab" data-tab="report">Rapport</button>
+      <button class="tab" data-tab="ai">IA</button>
+    </div>
+    <div class="results" id="tabSignal"><div class="empty-chart" style="padding:40px 20px">Chargez un screenshot pour voir le setup d'entrée SMC.</div></div>
+    <div class="results hidden" id="tabSmc"><div class="empty-chart" style="padding:40px 20px">Order Blocks, FVG, liquidité.</div></div>
+    <div class="results hidden" id="tabReport"><div class="empty-chart" style="padding:40px 20px">Rapport d'analyse complet.</div></div>
+    <div class="results hidden" id="tabAi"><div class="empty-chart" style="padding:40px 20px">Analyse IA (clé requise).</div></div>
+  </aside>
+</div>
+
+<div class="modal-backdrop" id="helpModal">
+  <div class="modal">
+    <button class="close" id="btnHelpClose">×</button>
+    <h2>ChartVision SMC — Guide</h2>
+    <h3>Flux de travail</h3>
+    <ol>
+      <li><b>Chargez</b> un screenshot TradingView (Ctrl+V, glisser, ou clic)</li>
+      <li><b>Calibrez les prix</b> : bouton « Calibrer au clic » → cliquez sur 2 labels de l'axe et saisissez leur valeur. C'est la méthode la plus précise.</li>
+      <li>L'analyse SMC se recalcule : Order Blocks, FVG, sweeps, BOS/CHoCH, premium/discount</li>
+      <li>Consultez l'onglet <b>Setup</b> pour les entrées, <b>SMC</b> pour le détail, <b>Rapport</b> pour la synthèse</li>
+    </ol>
+    <h3>Concepts SMC/ICT utilisés</h3>
+    <ul>
+      <li><b>Order Blocks</b> : dernière bougie opposée avant une impulsion forte. Zone de retour privilégiée.</li>
+      <li><b>Fair Value Gaps (FVG)</b> : déséquilibre entre 3 bougies. Aimant à prix, cible favorite.</li>
+      <li><b>Sweeps de liquidité</b> : mèche qui dépasse un swing puis rejette. Signal de retournement.</li>
+      <li><b>BOS</b> (Break of Structure) : continuation. <b>CHoCH</b> : changement de caractère = retournement.</li>
+      <li><b>Premium / Discount</b> : au-dessus ou en-dessous du 50 % du dernier range.</li>
+      <li><b>Equal Highs / Equal Lows</b> : liquidez piégée, cibles classiques.</li>
+    </ul>
+    <h3>Calibration précise</h3>
+    <p>Le bouton « Calibrer au clic » désactive temporairement le rendu de l'overlay. Cliquez précisément sur le centre d'un label de l'axe des prix, saisissez la valeur, recommencez. Deux points suffisent pour une conversion linéaire exacte.</p>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const ASSETS = {
+  auto:{name:'Auto',dec:2,unit:''},
+  crypto:{name:'Crypto',dec:2,unit:'',session:'24/7'},
+  forex:{name:'Forex',dec:4,unit:'',session:'Lun-Ven'},
+  stocks:{name:'Action',dec:2,unit:'$',session:'Heures marché'},
+  indices:{name:'Indice',dec:1,unit:'pts',session:'Heures marché'},
+  commodities:{name:'Mat. prem.',dec:2,unit:'$',session:'Sessions mixtes'}
+};
+const TV_GREEN = [[38,166,154],[8,153,129],[76,175,80],[0,150,136]];
+const TV_RED   = [[239,83,80],[242,54,69],[244,67,54],[255,82,82]];
+
+const S = {
+  cv:$('cv'), ov:$('overlay'), ctx:null, octx:null,
+  loaded:false, imageDataURL:null,
+  candles:[], swings:[], analysis:null, smc:null, setups:null, forecast:null,
+  priceCal:null, mouse:null, zoom:1, aiText:null,
+  layout:null,
+  calibMode:false, calibPoint:null, calibPoints:[]
+};
+S.ctx = S.cv.getContext('2d', {willReadFrequently:true});
+S.octx = S.ov.getContext('2d');
+
+function profile(){ return ASSETS[$('assetType').value] || ASSETS.auto; }
+function inferDecimals(v){
+  if(!isFinite(v)) return 2;
+  const a = Math.abs(v);
+  if(a >= 1000) return 2;
+  if(a >= 1) return a >= 100 ? 2 : 4;
+  return 5;
+}
+function yToPrice(y){
+  const c = S.priceCal;
+  if(!c) return null;
+  if(c.mode === 'click' || c.mode === 'manual'){
+    const p1 = c.p1, p2 = c.p2;
+    if(Math.abs(p2.y - p1.y) < 0.5) return p1.price;
+    return p1.price + (y - p1.y) * (p2.price - p1.price) / (p2.y - p1.y);
+  }
+  return null;
+}
+function priceToY(p){
+  const c = S.priceCal;
+  if(!c) return null;
+  const p1 = c.p1, p2 = c.p2;
+  if(Math.abs(p2.price - p1.price) < 1e-9) return p1.y;
+  return p1.y + (p - p1.price) * (p2.y - p1.y) / (p2.price - p1.price);
+}
+function fmtPrice(p, dec){
+  if(p === null || !isFinite(p)) return '—';
+  const d = dec !== undefined ? dec : (S.priceCal?.dec ?? profile().dec);
+  const u = profile().unit;
+  return p.toLocaleString('fr-FR', {minimumFractionDigits:d, maximumFractionDigits:d}) + (u ? ' '+u : '');
+}
+function fmtLevel(y){
+  const p = yToPrice(y);
+  if(p !== null) return fmtPrice(p);
+  const a = S.analysis;
+  if(!a) return '—';
+  const rel = (a.maxY - y) / (a.maxY - a.minY || 1);
+  return (rel*100).toFixed(1) + '%';
+}
+function priceOrPct(y){
+  const p = yToPrice(y);
+  if(p !== null) return fmtPrice(p);
+  const a = S.analysis;
+  if(!a) return '—';
+  const rel = (a.maxY - y) / (a.maxY - a.minY || 1);
+  return 'h ' + (rel*100).toFixed(1) + '%';
+}
+
+/* ============ CHARGEMENT ============ */
+async function handleFile(file){
+  if(!file || !file.type.startsWith('image/')) return;
+  setStatus('Chargement…', true);
+  try{
+    const url = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = rej;
+      fr.readAsDataURL(file);
+    });
+    const img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = url;
+    });
+    const MAX = 1600;
+    const k = Math.min(1, MAX/Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.round(img.naturalWidth*k), h = Math.round(img.naturalHeight*k);
+    S.cv.width = w; S.cv.height = h;
+    S.ov.width = w; S.ov.height = h;
+    S.ctx.drawImage(img, 0, 0, w, h);
+    S.imageDataURL = S.cv.toDataURL('image/jpeg', 0.92);
+
+    S.loaded = true; S.mouse = null; S.priceCal = null; S.aiText = null;
+    S.calibMode = false; S.calibPoints = [];
+
+    $('emptyChart').style.display = 'none';
+    $('canvasInner').style.display = 'block';
+    $('btnAI').disabled = false;
+    $('btnPrompt').disabled = false;
+    $('btnClear').disabled = false;
+    $('btnOCR').disabled = false;
+    $('btnClick').disabled = false;
+    $('btnExport').disabled = false;
+    $('calStatus').textContent = 'Sans calibration : % de hauteur. Utilisez "Calibrer au clic" pour des prix exacts.';
+    $('calibSteps').classList.add('hidden');
+
+    runAnalysis();
+  }catch(err){ console.error(err); setStatus('Erreur'); }
+}
+
+/* ============ DÉTECTION LAYOUT ============ */
+function detectTheme(data, W, H){
+  const samples = [[Math.floor(W*.05),Math.floor(H*.05)],[Math.floor(W*.95),Math.floor(H*.05)],[Math.floor(W*.05),Math.floor(H*.95)],[Math.floor(W*.95),Math.floor(H*.95)],[Math.floor(W*.5),Math.floor(H*.5)]];
+  let lum = 0;
+  for(const [x,y] of samples){ const i = (y*W+x)*4; lum += .299*data[i] + .587*data[i+1] + .114*data[i+2]; }
+  return lum/samples.length < 128 ? 'dark' : 'light';
+}
+function colorDist(a, b){ return Math.abs(a[0]-b[0])+Math.abs(a[1]-b[1])+Math.abs(a[2]-b[2]); }
+function classifyPixel(r, g, b, a){
+  if(a < 20) return 0;
+  const p = [r,g,b];
+  for(const c of TV_GREEN) if(colorDist(p, c) < 85) return 1;
+  for(const c of TV_RED)   if(colorDist(p, c) < 85) return 2;
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b), sat = mx-mn;
+  if(sat < 50) return 0;
+  if(g === mx && g-r > 30 && g-b > 15) return 1;
+  if(r === mx && r-g > 30 && r-b > 15) return 2;
+  return 0;
+}
+function detectVolumeSplit(rowActivity, W, H){
+  const startY = Math.floor(H * .55);
+  for(let y = startY; y < H * .95; y++){
+    if(rowActivity[y] < W * .003){
+      let below = 0;
+      for(let y2 = y+1; y2 < H*.98; y2++) if(rowActivity[y2] > W*.008) below++;
+      if(below > 6) return y;
+    }
+  }
+  return H;
+}
+function detectLayout(){
+  const W = S.cv.width, H = S.cv.height;
+  const data = S.ctx.getImageData(0, 0, W, H).data;
+  const theme = detectTheme(data, W, H);
+  const cls = new Uint8Array(W * H);
+  for(let p = 0, i = 0; i < data.length; i += 4, p++){
+    cls[p] = classifyPixel(data[i], data[i+1], data[i+2], data[i+3]);
+  }
+  const rowAct = new Int32Array(H), colAct = new Int32Array(W);
+  for(let y = 0; y < H; y++){
+    let rc = 0;
+    for(let x = 0; x < W; x++){ if(cls[y*W+x]){ rc++; colAct[x]++; } }
+    rowAct[y] = rc;
+  }
+  const volumeSplit = detectVolumeSplit(rowAct, W, H);
+  const hasVolume = volumeSplit < H * .98;
+  let chartLeft = W, chartRight = 0, chartTop = H, chartBottom = 0;
+  for(let y = 0; y < volumeSplit; y++){
+    for(let x = 0; x < W; x++){
+      if(cls[y*W+x]){
+        if(x < chartLeft) chartLeft = x;
+        if(x > chartRight) chartRight = x;
+        if(y < chartTop) chartTop = y;
+        if(y > chartBottom) chartBottom = y;
+      }
+    }
+  }
+  return { theme, cls, colAct, volumeSplit, hasVolume, chartLeft, chartRight, chartTop, chartBottom, rightMargin:W-chartRight, leftMargin:chartLeft, W, H };
+}
+
+/* ============ DÉTECTION BOUGIES ============ */
+function detectCandles(layout){
+  const { cls, colAct, chartLeft, chartRight, volumeSplit, W, H } = layout;
+  const active = x => colAct[x] >= 2;
+  const candles = [];
+  let x = Math.max(0, chartLeft - 2);
+  const xEnd = Math.min(W, chartRight + 3);
+  while(x < xEnd){
+    if(!active(x)){ x++; continue; }
+    const x1 = x;
+    while(x < xEnd && active(x)) x++;
+    const x2 = x - 1;
+    const width = x2 - x1 + 1;
+    if(width > 60) continue;
+    let yTop = H, yBot = -1;
+    for(let yy = 0; yy < volumeSplit; yy++){
+      for(let xx = x1; xx <= x2; xx++){
+        if(cls[yy*W+xx]){ if(yy<yTop) yTop=yy; if(yy>yBot) yBot=yy; break; }
+      }
+    }
+    if(yBot < 0 || yBot - yTop < 2) continue;
+    const bodyTh = Math.max(2, Math.round(width*.5));
+    let bodyTop = -1, bodyBot = -1;
+    for(let yy = yTop; yy <= yBot; yy++){
+      let cnt = 0;
+      for(let xx = x1; xx <= x2; xx++) if(cls[yy*W+xx]) cnt++;
+      if(cnt >= bodyTh){ if(bodyTop<0) bodyTop=yy; bodyBot=yy; }
+    }
+    if(bodyTop < 0){ bodyTop = yTop; bodyBot = yBot; }
+    let gA = 0, rA = 0;
+    for(let yy = yTop; yy <= yBot; yy++){
+      for(let xx = x1; xx <= x2; xx++){
+        const c = cls[yy*W+xx];
+        if(c === 1) gA++; else if(c === 2) rA++;
+      }
+    }
+    candles.push({
+      x:(x1+x2)/2, x1, x2, width,
+      high:yTop, low:yBot, bodyTop, bodyBot,
+      mid:(yTop+yBot)/2,
+      bull:gA >= rA,
+      bodySize:Math.abs(bodyBot - bodyTop),
+      range:yBot - yTop
+    });
+  }
+  return candles;
+}
+
+/* ============ SWINGS ============ */
+function detectSwings(candles){
+  if(candles.length < 5) return [];
+  const win = Math.max(2, Math.round(candles.length/15));
+  const swings = [];
+  for(let i = win; i < candles.length - win; i++){
+    let isH = true, isL = true;
+    const ci = candles[i];
+    for(let j = i-win; j <= i+win; j++){
+      if(j === i) continue;
+      if(candles[j].high < ci.high) isH = false;
+      if(candles[j].low > ci.low) isL = false;
+    }
+    if(isH) swings.push({i, x:ci.x, y:ci.high, type:'H', candle:ci});
+    else if(isL) swings.push({i, x:ci.x, y:ci.low, type:'L', candle:ci});
+  }
+  return swings;
+}
+
+/* ============ STRUCTURE HH/HL/LH/LL + BOS/CHoCH ============ */
+function classifySwings(swings){
+  const Hs = swings.filter(s => s.type === 'H');
+  const Ls = swings.filter(s => s.type === 'L');
+  const labeled = [];
+  for(let k = 0; k < Hs.length; k++){
+    const prev = Hs[k-1];
+    labeled.push({...Hs[k], label: !prev ? 'H' : (Hs[k].y < prev.y ? 'HH' : 'LH')});
+  }
+  for(let k = 0; k < Ls.length; k++){
+    const prev = Ls[k-1];
+    labeled.push({...Ls[k], label: !prev ? 'L' : (Ls[k].y > prev.y ? 'LL' : 'HL')});
+  }
+  return labeled.sort((a,b) => a.i - b.i);
+}
+
+function detectBOSCHoCH(candles, swings){
+  const Hs = swings.filter(s => s.type === 'H');
+  const Ls = swings.filter(s => s.type === 'L');
+  const events = [];
+  for(let i = 2; i < candles.length; i++){
+    const c = candles[i];
+    const prevH = Hs.filter(s => s.i < i-1).slice(-2);
+    const prevL = Ls.filter(s => s.i < i-1).slice(-2);
+
+    if(prevH.length >= 1){
+      const lastH = prevH[prevH.length - 1];
+      if(c.bodyTop < lastH.y - 2 && c.bodyBot < lastH.y - 2){
+        const isCHoCH = prevH.length >= 2 && prevH[prevH.length-1].y > prevH[prevH.length-2].y;
+        events.push({type: isCHoCH ? 'CHoCH' : 'BOS', dir: 'bullish', i, levelY: lastH.y, candleX: c.x, bodyY: c.bodyTop});
+      }
+    }
+    if(prevL.length >= 1){
+      const lastL = prevL[prevL.length - 1];
+      if(c.bodyBot > lastL.y + 2 && c.bodyTop > lastL.y + 2){
+        const isCHoCH = prevL.length >= 2 && prevL[prevL.length-1].y < prevL[prevL.length-2].y;
+        events.push({type: isCHoCH ? 'CHoCH' : 'BOS', dir: 'bearish', i, levelY: lastL.y, candleX: c.x, bodyY: c.bodyBot});
+      }
+    }
+  }
+  const seen = new Set();
+  return events.filter(e => {
+    const key = e.i + '-' + e.type + '-' + e.dir;
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(-6);
+}
+
+/* ============ ORDER BLOCKS ============ */
+function detectOrderBlocks(candles){
+  const avgBody = candles.reduce((s, c) => s + c.bodySize, 0) / candles.length;
+  const obs = [];
+  for(let i = 2; i < candles.length - 1; i++){
+    const c = candles[i];
+    if(c.bodySize < avgBody * 1.6) continue;
+    if(c.bull){
+      // Impulsion haussière → chercher dernière bougie rouge avant
+      for(let j = i - 1; j >= Math.max(0, i - 8); j--){
+        if(!candles[j].bull){
+          obs.push({
+            type:'bullish', i:j,
+            high:candles[j].high, low:candles[j].low,
+            bodyTop:candles[j].bodyTop, bodyBot:candles[j].bodyBot,
+            x:candles[j].x
+          });
+          break;
+        }
+      }
+    } else {
+      for(let j = i - 1; j >= Math.max(0, i - 8); j--){
+        if(candles[j].bull){
+          obs.push({
+            type:'bearish', i:j,
+            high:candles[j].high, low:candles[j].low,
+            bodyTop:candles[j].bodyTop, bodyBot:candles[j].bodyBot,
+            x:candles[j].x
+          });
+          break;
+        }
+      }
+    }
+  }
+  // Dédoublonnage par index
+  const seen = new Set();
+  const unique = obs.filter(o => { if(seen.has(o.i)) return false; seen.add(o.i); return true; });
+  // Mitigation
+  for(const ob of unique){
+    ob.mitigated = false;
+    ob.touches = 0;
+    for(let k = ob.i + 2; k < candles.length; k++){
+      const c = candles[k];
+      const overlaps = c.low <= ob.high && c.high >= ob.low;
+      if(overlaps){
+        ob.touches++;
+        if(ob.type === 'bullish' && c.low <= ob.high) ob.mitigated = true;
+        if(ob.type === 'bearish' && c.high >= ob.low) ob.mitigated = true;
+      }
+    }
+  }
+  return {
+    bullish: unique.filter(o => o.type === 'bullish').slice(-4),
+    bearish: unique.filter(o => o.type === 'bearish').slice(-4)
+  };
+}
+
+/* ============ FAIR VALUE GAPS ============ */
+function detectFVGs(candles){
+  const fvgs = [];
+  for(let i = 1; i < candles.length - 1; i++){
+    const prev = candles[i-1], next = candles[i+1], mid = candles[i];
+    // Bullish FVG : next.low > prev.high (gap haussier)
+    if(next.low > prev.high + 2 && mid.bull){
+      fvgs.push({
+        type:'bullish', i,
+        yTop:prev.high, yBot:next.low,
+        top:prev.high, bot:next.low,
+        x:(prev.x + next.x)/2, size:next.low - prev.high
+      });
+    }
+    // Bearish FVG : next.high < prev.low
+    if(next.high < prev.low - 2 && !mid.bull){
+      fvgs.push({
+        type:'bearish', i,
+        yTop:next.high, yBot:prev.low,
+        top:next.high, bot:prev.low,
+        x:(prev.x + next.x)/2, size:prev.low - next.high
+      });
+    }
+  }
+  // Fill status
+  for(const fvg of fvgs){
+    fvg.filled = false;
+    fvg.fillPct = 0;
+    for(let k = fvg.i + 2; k < candles.length; k++){
+      const c = candles[k];
+      if(fvg.type === 'bullish'){
+        if(c.low >= fvg.yBot){ fvg.filled = true; fvg.fillPct = 100; }
+        else if(c.low > fvg.yTop){
+          const fill = (c.low - fvg.yTop) / (fvg.yBot - fvg.yTop);
+          fvg.fillPct = Math.max(fvg.fillPct, Math.round(fill*100));
+        }
+      } else {
+        if(c.high <= fvg.yTop){ fvg.filled = true; fvg.fillPct = 100; }
+        else if(c.high < fvg.yBot){
+          const fill = (fvg.yBot - c.high) / (fvg.yBot - fvg.yTop);
+          fvg.fillPct = Math.max(fvg.fillPct, Math.round(fill*100));
+        }
+      }
+    }
+  }
+  return fvgs.filter(f => !f.filled && f.size > 3).slice(-6);
+}
+
+/* ============ LIQUIDITY SWEEPS ============ */
+function detectLiquiditySweeps(candles, swings){
+  const sweeps = [];
+  for(let i = 2; i < candles.length; i++){
+    const c = candles[i];
+    for(const sw of swings){
+      if(sw.i >= i - 1) continue;
+      if(i - sw.i > 40) continue;
+      if(sw.type === 'H'){
+        // Mèche au-dessus du swing high mais close en-dessous
+        if(c.high < sw.y && c.bodyTop >= sw.y - 1 && c.bodyBot > sw.y){
+          sweeps.push({type:'bearish', i, levelY:sw.y, levelX:sw.x, sweepX:c.x, label:'Sweep sommet'});
+        }
+      } else {
+        if(c.low > sw.y && c.bodyBot <= sw.y + 1 && c.bodyTop < sw.y){
+          sweeps.push({type:'bullish', i, levelY:sw.y, levelX:sw.x, sweepX:c.x, label:'Sweep creux'});
+        }
+      }
+    }
+  }
+  // Dédup
+  const seen = new Set();
+  return sweeps.filter(s => {
+    const k = s.i + '-' + s.type + '-' + Math.round(s.levelY);
+    if(seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).slice(-5);
+}
+
+/* ============ EQUAL HIGHS/LOWS ============ */
+function detectEqualLevels(swings, tolerance){
+  const groups = [];
+  for(const sw of swings){
+    let found = false;
+    for(const g of groups){
+      if(g.type === sw.type && Math.abs(g.y - sw.y) < tolerance){
+        g.ys.push(sw.y); g.count++;
+        g.y = g.ys.reduce((s, v) => s+v, 0)/g.ys.length;
+        g.xs.push(sw.x);
+        found = true; break;
+      }
+    }
+    if(!found) groups.push({type:sw.type, y:sw.y, ys:[sw.y], count:1, xs:[sw.x]});
+  }
+  return groups.filter(g => g.count >= 2).sort((a, b) => b.count - a.count).slice(0, 4);
+}
+
+/* ============ PREMIUM / DISCOUNT ============ */
+function detectPremiumDiscount(candles, swings){
+  const lastH = swings.filter(s => s.type === 'H').slice(-1)[0];
+  const lastL = swings.filter(s => s.type === 'L').slice(-1)[0];
+  if(!lastH || !lastL) return null;
+  // Prendre le range le plus récent (peu importe l'ordre)
+  let hi = Math.min(lastH.y, lastL.y);
+  let lo = Math.max(lastH.y, lastL.y);
+  const mid = (hi + lo) / 2;
+  const currentY = candles[candles.length - 1].mid;
+  // Position dans le range : 0 = top, 1 = bottom
+  const pos = (currentY - hi) / (lo - hi);
+  let zone;
+  if(pos < 0.25) zone = 'Premium extrême';
+  else if(pos < 0.5) zone = 'Premium';
+  else if(pos < 0.75) zone = 'Discount';
+  else zone = 'Discount extrême';
+  // Fibs
+  const range = lo - hi;
+  const fibs = [
+    {level:0, y:hi},
+    {level:0.236, y:hi + range*0.236},
+    {level:0.5, y:hi + range*0.5},
+    {level:0.618, y:hi + range*0.618},
+    {level:0.786, y:hi + range*0.786},
+    {level:1, y:lo}
+  ];
+  return { hi, lo, mid, pos, zone, fibs, currentY };
+}
+
+/* ============ ANALYSE PRINCIPALE ============ */
+function runAnalysis(){
+  if(!S.loaded) return;
+  setStatus('Analyse SMC…', true);
+  try{
+    S.layout = detectLayout();
+    S.candles = detectCandles(S.layout);
+    if(S.candles.length < 6){
+      setStatus('Trop peu de bougies');
+      $('tabSignal').innerHTML = '<div class="warnbox">Pas assez de bougies détectées. Essayez un screenshot TradingView plus propre (bouton "Screenshot natif" de TradingView de préférence).</div>';
+      return;
+    }
+
+    S.swings = detectSwings(S.candles);
+    S.swingsLabeled = classifySwings(S.swings);
+
+    const structure = detectStructure(S.swingsLabeled);
+    S.analysis = computeRegressionAnalysis(S.candles, structure);
+    S.analysis.swings = S.swings;
+
+    S.smc = {
+      obs: detectOrderBlocks(S.candles),
+      fvgs: detectFVGs(S.candles),
+      sweeps: detectLiquiditySweeps(S.candles, S.swings),
+      equalLevels: detectEqualLevels(S.swings, Math.max(4, S.cv.height/80)),
+      bosCHoCH: detectBOSCHoCH(S.candles, S.swings),
+      pd: detectPremiumDiscount(S.candles, S.swings),
+      labeledSwings: S.swingsLabeled,
+      structure
+    };
+
+    S.setups = computeSetups(S.candles, S.analysis, S.smc);
+    S.forecast = computeForecast(S.candles, S.analysis, S.smc);
+
+    renderAll();
+    drawOverlay();
+    setStatus(`${S.candles.length} bougies · confiance ${S.analysis.confidence}%`);
+  }catch(err){
+    console.error(err);
+    setStatus('Erreur');
+  }
+}
+
+function detectStructure(labeledSwings){
+  const Hs = labeledSwings.filter(s => s.type === 'H').slice(-3);
+  const Ls = labeledSwings.filter(s => s.type === 'L').slice(-3);
+  if(Hs.length < 2 || Ls.length < 2) return {name:'Indéterminée', strength:0.3, bias:'flat'};
+  const lastH = Hs[Hs.length-1], prevH = Hs[Hs.length-2];
+  const lastL = Ls[Ls.length-1], prevL = Ls[Ls.length-2];
+  const hUp = lastH.y < prevH.y;
+  const lUp = lastL.y < prevL.y;
+  if(hUp && lUp) return {name:'Haussier (HH + HL)', strength:0.9, bias:'up'};
+  if(!hUp && !lUp) return {name:'Baissier (LH + LL)', strength:0.9, bias:'down'};
+  return {name:'Range / transition', strength:0.4, bias:'flat'};
+}
+
+function computeRegressionAnalysis(candles, structure){
+  const H = S.cv.height;
+  const xs = candles.map(c => c.x);
+  const ys = candles.map(c => c.mid);
+  const n = xs.length;
+  let sx=0, sy=0, sxx=0, sxy=0;
+  for(let i = 0; i < n; i++){ sx+=xs[i]; sy+=ys[i]; sxx+=xs[i]*xs[i]; sxy+=xs[i]*ys[i]; }
+  const slope = (n*sxy - sx*sy) / (n*sxx - sx*sx || 1);
+  const intercept = (sy - slope*sx) / n;
+  let ssTot=0, ssRes=0;
+  const meanY = sy/n;
+  for(let i = 0; i < n; i++){
+    const pred = intercept + slope*xs[i];
+    ssTot += (ys[i]-meanY)**2;
+    ssRes += (ys[i]-pred)**2;
+  }
+  const r2 = ssTot > 0 ? Math.max(0, 1 - ssRes/ssTot) : 0;
+  const slopeNorm = -slope;
+  const trendDir = slopeNorm > .002 ? 'up' : slopeNorm < -.002 ? 'down' : 'flat';
+  const avgRange = candles.reduce((s, c) => s + c.range, 0) / candles.length;
+  const volatilityPct = (avgRange/H)*100;
+  const recent = candles.slice(-14);
+  const rsi = Math.round((recent.filter(c => c.bull).length / recent.length) * 100);
+  const confidence = Math.min(95, Math.round(r2*40 + Math.min(30, candles.length/3) + (structure.strength||0)*25));
+  const minY = Math.min(...candles.map(c => c.high));
+  const maxY = Math.max(...candles.map(c => c.low));
+  return {slope, intercept, r2, slopeNorm, trendDir, avgRange, volatilityPct, rsi, confidence, width:S.cv.width, height:H, minY, maxY, lastCandle:candles[candles.length-1], candleCount:candles.length};
+}
+
+/* ============ CALCUL DES SETUPS (SMC) ============ */
+
+function confluenceScore(bullish){
+  let score = 0;
+  const tags = [];
+  const smc = S.smc;
+  const trend = S.analysis.structure.bias;
+
+  if((bullish && trend === 'up') || (!bullish && trend === 'down')){
+    score += 2; tags.push({text:'Aligné tendance', on:true});
+  } else if(trend !== 'flat'){
+    score -= 1; tags.push({text:'Contre tendance', on:false});
+  }
+
+  // OB aligné
+  const obs = bullish ? smc.obs.bullish : smc.obs.bearish;
+  const recentOB = obs.filter(o => !o.mitigated).slice(-1)[0];
+  if(recentOB){ score += 2; tags.push({text:'OB non mitigé', on:true}); }
+
+  // FVG
+  const fvgAligned = smc.fvgs.find(f => f.type === (bullish ? 'bullish' : 'bearish'));
+  if(fvgAligned){ score += 1; tags.push({text:'FVG ouvert', on:true}); }
+
+  // Sweep
+  const sweep = smc.sweeps.filter(s => s.type === (bullish ? 'bullish' : 'bearish')).slice(-1)[0];
+  if(sweep){ score += 2; tags.push({text:'Sweep liquidité', on:true}); }
+
+  // BOS/CHoCH
+  const bosDir = smc.bosCHoCH.filter(e => e.dir === (bullish ? 'bullish' : 'bearish')).slice(-1)[0];
+  if(bosDir){
+    if(bosDir.type === 'CHoCH'){ score += 3; tags.push({text:'CHoCH', on:true}); }
+    else { score += 1.5; tags.push({text:'BOS', on:true}); }
+  }
+
+  // Premium/Discount
+  if(smc.pd){
+    const isGoodZone = (bullish && smc.pd.pos > 0.5) || (!bullish && smc.pd.pos < 0.5);
+    if(isGoodZone){ score += 1; tags.push({text: bullish ? 'Discount' : 'Premium', on:true}); }
+  }
+
+  return { score, tags };
+}
+
+function computeSetups(candles, analysis, smc){
+  const last = candles[candles.length-1];
+  const currentY = last.mid;
+  const currentPrice = yToPrice(currentY);
+  const calibrated = currentPrice !== null;
+  const prof = profile();
+
+  // Setup ACHAT
+  const bullOB = smc.obs.bullish.filter(o => !o.mitigated && o.high > currentY).slice(-1)[0]
+             || smc.obs.bullish.filter(o => o.high > currentY).slice(-1)[0]
+             || smc.obs.bullish.slice(-1)[0];
+  const bullFVG = smc.fvgs.filter(f => f.type === 'bullish' && f.yTop > currentY).slice(-1)[0];
+  const bullSweep = smc.sweeps.filter(s => s.type === 'bullish').slice(-1)[0];
+
+  let buyEntryY = null, buySLY = null, buyTP1Y = null, buyTP2Y = null;
+  if(bullOB){
+    buyEntryY = bullOB.high;
+    buySLY = bullOB.low + 2;
+  } else if(bullFVG){
+    buyEntryY = bullFVG.yTop;
+    buySLY = bullFVG.yBot + 2;
+  } else if(bullSweep){
+    buyEntryY = bullSweep.levelY + 3;
+    buySLY = bullSweep.levelY - 5;
+  } else {
+    buyEntryY = currentY - analysis.avgRange * 0.5;
+    buySLY = buyEntryY + analysis.avgRange * 0.6;
+  }
+  // TP1 : swing high le plus proche au-dessus
+  const resAbove = smc.labeledSwings.filter(s => s.type === 'H' && s.y < buyEntryY).sort((a, b) => b.y - a.y)[0];
+  buyTP1Y = resAbove ? resAbove.y : buyEntryY - analysis.avgRange * 2;
+  // TP2 : equal highs ou swing high plus loin
+  const eqHighs = smc.equalLevels.filter(g => g.type === 'H' && g.y < buyTP1Y).sort((a, b) => b.y - a.y)[0];
+  buyTP2Y = eqHighs ? eqHighs.y : buyTP1Y - analysis.avgRange * 1.5;
+
+  const buyConfluence = confluenceScore(true);
+  const buyEntry = yToPrice(buyEntryY);
+  const buySL = yToPrice(buySLY);
+  const buyTP1 = yToPrice(buyTP1Y);
+  const buyTP2 = yToPrice(buyTP2Y);
+  const buyRR = (buyEntry !== null && buySL !== null && buyTP1 !== null && buyEntry > buySL)
+    ? (buyTP1 - buyEntry) / (buyEntry - buySL) : null;
+  const buySize = (buyEntry !== null && buySL !== null && buyEntry > buySL)
+    ? (1 / (Math.abs(buyEntry-buySL)/buyEntry*100) * 100).toFixed(1) : null;
+
+  // Setup VENTE
+  const bearOB = smc.obs.bearish.filter(o => !o.mitigated && o.low < currentY).slice(-1)[0]
+             || smc.obs.bearish.filter(o => o.low < currentY).slice(-1)[0]
+             || smc.obs.bearish.slice(-1)[0];
+  const bearFVG = smc.fvgs.filter(f => f.type === 'bearish' && f.yBot < currentY).slice(-1)[0];
+  const bearSweep = smc.sweeps.filter(s => s.type === 'bearish').slice(-1)[0];
+
+  let sellEntryY = null, sellSLY = null, sellTP1Y = null, sellTP2Y = null;
+  if(bearOB){
+    sellEntryY = bearOB.low;
+    sellSLY = bearOB.high - 2;
+  } else if(bearFVG){
+    sellEntryY = bearFVG.yBot;
+    sellSLY = bearFVG.yTop - 2;
+  } else if(bearSweep){
+    sellEntryY = bearSweep.levelY - 3;
+    sellSLY = bearSweep.levelY + 5;
+  } else {
+    sellEntryY = currentY + analysis.avgRange * 0.5;
+    sellSLY = sellEntryY - analysis.avgRange * 0.6;
+  }
+  const supBelow = smc.labeledSwings.filter(s => s.type === 'L' && s.y > sellEntryY).sort((a, b) => a.y - b.y)[0];
+  sellTP1Y = supBelow ? supBelow.y : sellEntryY + analysis.avgRange * 2;
+  const eqLows = smc.equalLevels.filter(g => g.type === 'L' && g.y > sellTP1Y).sort((a, b) => a.y - b.y)[0];
+  sellTP2Y = eqLows ? eqLows.y : sellTP1Y + analysis.avgRange * 1.5;
+
+  const sellConfluence = confluenceScore(false);
+  const sellEntry = yToPrice(sellEntryY);
+  const sellSL = yToPrice(sellSLY);
+  const sellTP1 = yToPrice(sellTP1Y);
+  const sellTP2 = yToPrice(sellTP2Y);
+  const sellRR = (sellEntry !== null && sellSL !== null && sellTP1 !== null && sellSL > sellEntry)
+    ? (sellEntry - sellTP1) / (sellSL - sellEntry) : null;
+  const sellSize = (sellEntry !== null && sellSL !== null && sellSL > sellEntry)
+    ? (1 / (Math.abs(sellSL-sellEntry)/sellEntry*100) * 100).toFixed(1) : null;
+
+  // Favori
+  const bias = smc.structure.bias;
+  let favBuy = false, favSell = false;
+  if(bias === 'up' && buyConfluence.score >= sellConfluence.score - 2) favBuy = true;
+  else if(bias === 'down' && sellConfluence.score >= buyConfluence.score - 2) favSell = true;
+  else if(buyConfluence.score > sellConfluence.score + 2) favBuy = true;
+  else if(sellConfluence.score > buyConfluence.score + 2) favSell = true;
+
+  return {
+    currentPrice, calibrated, bias, profile:prof,
+    long:{
+      favored:favBuy, entry:buyEntry, sl:buySL, tp1:buyTP1, tp2:buyTP2, rr:buyRR, size:buySize,
+      entryY:buyEntryY, slY:buySLY, tp1Y:buyTP1Y, tp2Y:buyTP2Y,
+      confluence:buyConfluence
+    },
+    short:{
+      favored:favSell, entry:sellEntry, sl:sellSL, tp1:sellTP1, tp2:sellTP2, rr:sellRR, size:sellSize,
+      entryY:sellEntryY, slY:sellSLY, tp1Y:sellTP1Y, tp2Y:sellTP2Y,
+      confluence:sellConfluence
+    }
+  };
+}
+
+function computeForecast(candles, analysis, smc){
+  const last = candles[candles.length-1];
+  const projX = last.x + (last.x - candles[0].x)*0.15;
+  const projY = analysis.intercept + analysis.slope*projX;
+  const projPrice = yToPrice(projY);
+  const currentPrice = yToPrice(last.mid);
+
+  const tb = analysis.trendDir === 'up' ? 1 : analysis.trendDir === 'down' ? -1 : 0;
+  const rb = (analysis.rsi - 50)/50;
+  const sb = smc.structure.bias === 'up' ? 1 : smc.structure.bias === 'down' ? -1 : 0;
+  let pUp = Math.max(.12, Math.min(.82, .35 + .18*tb + .12*rb + .15*sb));
+  let pDown = Math.max(.12, Math.min(.82, .35 - .18*tb - .12*rb - .15*sb));
+  let pRange = Math.max(.12, 1 - pUp - pDown);
+  const sum = pUp + pDown + pRange;
+  return {projPrice, currentPrice, pUp:pUp/sum, pDown:pDown/sum, pRange:pRange/sum, projX, projY};
+}
+
+/* ============ RENDU ============ */
+
+function setStatus(t, spin){ $('statusTxt').innerHTML = (spin ? '<span class="spin"></span>' : '') + t; }
+
+function renderAll(){
+  renderSignal();
+  renderSMC();
+  renderReport();
+}
+
+function renderSignal(){
+  const a = S.analysis, st = S.setups;
+  if(!a || !st){ return; }
+  const dirCls = st.bias === 'up' ? 'up' : st.bias === 'down' ? 'down' : 'neu';
+  const dirTxt = st.bias === 'up' ? 'Haussier' : st.bias === 'down' ? 'Baissier' : 'Neutre';
+  const sym = $('symbol').value.trim() || '—';
+  const tf = $('timeframe').value.trim();
+  const curStr = st.currentPrice !== null ? fmtPrice(st.currentPrice) : priceOrPct(S.candles[S.candles.length-1].mid);
+
+  const setupBlock = (kind, label, s) => {
+    const cls = kind === 'buy' ? 'buy' : 'sell';
+    const favored = s.favored ? `<span class="conf good">★ Privilégié</span>` : '';
+    const scoreCls = s.confluence.score >= 6 ? 'good' : '';
+    const rrStr = s.rr !== null ? s.rr.toFixed(2) : '—';
+    const rrPct = s.rr !== null ? Math.min(1, s.rr/3) : 0;
+    const tagsHtml = s.confluence.tags.map(t => `<span class="tag ${t.on?'on':''}">${t.text}</span>`).join('');
+    const entryStr = s.entry !== null ? fmtPrice(s.entry) : priceOrPct(s.entryY);
+    const slStr = s.sl !== null ? fmtPrice(s.sl) : priceOrPct(s.slY);
+    const tp1Str = s.tp1 !== null ? fmtPrice(s.tp1) : priceOrPct(s.tp1Y);
+    const tp2Str = s.tp2 !== null ? fmtPrice(s.tp2) : priceOrPct(s.tp2Y);
+    return `<div class="setup ${cls}">
+      <div class="setup-head">
+        <h3>${kind==='buy'?'🟢 ACHAT':'🔴 VENTE'}</h3>
+        <div style="display:flex;gap:5px;align-items:center">${favored}<span class="conf ${scoreCls}">${s.confluence.score.toFixed(0)} pts</span></div>
+      </div>
+      <div class="trade-grid">
+        <div class="trade-cell entry"><small>Entrée</small><b>${entryStr}</b></div>
+        <div class="trade-cell sl"><small>Stop-loss</small><b>${slStr}</b></div>
+        <div class="trade-cell tp"><small>TP 1</small><b>${tp1Str}</b></div>
+        <div class="trade-cell tp"><small>TP 2</small><b>${tp2Str}</b></div>
+        <div class="trade-cell rr"><small>R:R</small><b>${rrStr}</b>
+          <div class="rr-bar"><div class="risk" style="width:${(1-rrPct)*100}%"></div><div class="reward" style="width:${rrPct*100}%"></div></div>
+        </div>
+        <div class="trade-cell"><small>Taille (1%)</small><b>${s.size ?? '—'}%</b></div>
+      </div>
+      <div class="confluence">${tagsHtml}</div>
+      <div class="trade-reason">${kind === 'buy'
+        ? 'Entrée sur OB haussier ou FVG, stop sous la zone, cible sur liquidité au-dessus (swing high, equal highs).'
+        : 'Entrée sur OB baissier ou FVG, stop au-dessus, cible sur liquidité en-dessous (swing low, equal lows).'}
+        ${s.rr !== null && s.rr >= 2 ? '✓ R:R favorable.' : s.rr !== null ? '⚠ R:R < 2.' : ''}</div>
+    </div>`;
+  };
+
+  $('tabSignal').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi ${dirCls}"><small>Biais</small><b class="${dirCls}-text">${dirTxt}</b><div class="sub">${S.smc.structure.name}</div></div>
+      <div class="kpi info"><small>Prix actuel</small><b>${curStr}</b><div class="sub">${sym}${tf?' · '+tf:''}</div></div>
+      <div class="kpi ${a.rsi>70?'down':a.rsi<30?'up':'neu'}"><small>RSI≈</small><b>${a.rsi}</b><div class="sub">${a.rsi>70?'Surachat':a.rsi<30?'Survente':'Neutre'}</div></div>
+      <div class="kpi info"><small>Confiance</small><b>${a.confidence}%</b><div class="sub">R² ${(a.r2*100).toFixed(0)}%</div></div>
+    </div>
+    ${setupBlock('buy', 'Setup ACHAT', st.long)}
+    ${setupBlock('sell', 'Setup VENTE', st.short)}
+    <div class="note" style="margin-top:10px;padding:8px;background:var(--panel2);border-radius:5px">
+      ${S.priceCal ? '✓ Prix calibrés — niveaux exploitables.' : '⚠ Non calibré — les prix affichés sont en % de hauteur. Utilisez « Calibrer au clic » pour convertir en prix réels.'}
+    </div>
+  `;
+}
+
+function renderSMC(){
+  const smc = S.smc, a = S.analysis;
+  if(!smc) return;
+  const blocks = [];
+
+  // Order Blocks
+  if($('optOB').checked){
+    for(const ob of smc.obs.bullish){
+      blocks.push({
+        cls: 'ob-bull', icon: 'OB',
+        title: `Order Block haussier ${ob.mitigated ? '· mitigé' : '· non mitigé'}`,
+        zone: `${priceOrPct(ob.low)} – ${priceOrPct(ob.high)}`,
+        meta: `${ob.touches} retour(s) depuis sa formation`
+      });
+    }
+    for(const ob of smc.obs.bearish){
+      blocks.push({
+        cls: 'ob-bear', icon: 'OB',
+        title: `Order Block baissier ${ob.mitigated ? '· mitigé' : '· non mitigé'}`,
+        zone: `${priceOrPct(ob.low)} – ${priceOrPct(ob.high)}`,
+        meta: `${ob.touches} retour(s) depuis sa formation`
+      });
+    }
+  }
+
+  // FVG
+  if($('optFVG').checked){
+    for(const f of smc.fvgs){
+      blocks.push({
+        cls: f.type === 'bullish' ? 'fvg-bull' : 'fvg-bear',
+        icon: 'FVG',
+        title: `Fair Value Gap ${f.type === 'bullish' ? 'haussier' : 'baissier'}`,
+        zone: `${priceOrPct(Math.min(f.yTop, f.yBot))} – ${priceOrPct(Math.max(f.yTop, f.yBot))}`,
+        meta: `Rempli à ${f.fillPct}% · cible favorite`
+      });
+    }
+  }
+
+  // Sweeps
+  if($('optLiq').checked){
+    for(const s of smc.sweeps){
+      blocks.push({
+        cls: 'liq', icon: '≈',
+        title: s.label,
+        zone: priceOrPct(s.levelY),
+        meta: s.type === 'bullish' ? 'Rejet après piqûre sous le creux → signal haussier' : 'Rejet après piqûre au-dessus du sommet → signal baissier'
+      });
+    }
+    for(const e of smc.equalLevels){
+      blocks.push({
+        cls: 'liq', icon: '=',
+        title: e.type === 'H' ? 'Equal Highs (liquidité au-dessus)' : 'Equal Lows (liquidité en-dessous)',
+        zone: priceOrPct(e.y),
+        meta: `${e.count} sommets/creux au même niveau · cible classique`
+      });
+    }
+  }
+
+  // BOS / CHoCH
+  if($('optBOS').checked){
+    for(const ev of smc.bosCHoCH.slice(-4)){
+      blocks.push({
+        cls: 'bos', icon: ev.type === 'CHoCH' ? '↺' : '→',
+        title: `${ev.type} ${ev.dir === 'bullish' ? 'haussier' : 'baissier'}`,
+        zone: priceOrPct(ev.levelY),
+        meta: ev.type === 'CHoCH' ? 'Changement de caractère — possible retournement' : 'Break of Structure — continuation de tendance'
+      });
+    }
+  }
+
+  // Premium / Discount
+  let pdHtml = '';
+  if($('optPD').checked && smc.pd){
+    const pd = smc.pd;
+    const zoneClass = pd.pos < 0.5 ? 'down' : 'up';
+    pdHtml = `<h2>Premium / Discount</h2>
+      <div class="kpi-grid">
+        <div class="kpi ${zoneClass}"><small>Zone actuelle</small><b>${pd.zone}</b><div class="sub">${(pd.pos*100).toFixed(0)}% du range</div></div>
+        <div class="kpi info"><small>Range</small><b style="font-size:11px">${priceOrPct(pd.hi)} → ${priceOrPct(pd.lo)}</b></div>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted)">Le prix est ${pd.pos < 0.5 ? 'en premium (zone de vente)' : 'en discount (zone d\'achat)'} sur le dernier swing. Fibonacci du range :</p>
+      ${pd.fibs.map(f => `<div style="display:flex;justify-content:space-between;padding:5px 9px;background:var(--panel2);border-radius:4px;margin-bottom:3px;font-size:11.5px;${[0.5,0.618,0.382].includes(f.level)?'border-left:3px solid var(--acc)':''}"><span style="color:${[0.5,0.618,0.382].includes(f.level)?'#63a4ff':'var(--muted)'}">${(f.level*100).toFixed(1)}%</span><span style="font-family:ui-monospace,monospace;font-weight:700">${priceOrPct(f.y)}</span></div>`).join('')}
+    `;
+  }
+
+  // Structure swings
+  const swingsHtml = smc.labeledSwings.slice(-10).map(s => `<span class="tag">${s.label}</span>`).join(' ');
+
+  $('tabSmc').innerHTML = `
+    <h2>Structure de marché</h2>
+    <div class="smc-block bos"><div class="icon">∿</div><div class="content">
+      <strong>${smc.structure.name}</strong>
+      <div class="meta">Séquence des derniers swings : ${swingsHtml || '—'}</div>
+    </div></div>
+    ${pdHtml}
+    <h2>Order Blocks · FVG · Liquidité</h2>
+    ${blocks.length ? blocks.map(b => `<div class="smc-block ${b.cls}"><div class="icon">${b.icon}</div><div class="content"><strong>${b.title}</strong><div class="zone">${b.zone}</div><div class="meta">${b.meta}</div></div></div>`).join('') : '<div class="note">Aucun élément SMC détecté.</div>'}
+  `;
+}
+
+function renderReport(){
+  const a = S.analysis, smc = S.smc, st = S.setups, f = S.forecast;
+  if(!a) return;
+  const sym = $('symbol').value.trim() || 'non identifié';
+  const tf = $('timeframe').value.trim() || '—';
+  const prof = profile();
+  const calibTxt = S.priceCal ? '✓ calibré' : '⚠ non calibré (% hauteur)';
+
+  const supLines = smc.labeledSwings.filter(s => s.type === 'L').slice(-3).map(s => `<li>${s.label} à ${priceOrPct(s.y)}</li>`).join('');
+  const resLines = smc.labeledSwings.filter(s => s.type === 'H').slice(-3).map(s => `<li>${s.label} à ${priceOrPct(s.y)}</li>`).join('');
+
+  const obList = (list, tag) => list.map(o => `<li>${tag} ${priceOrPct(o.low)} – ${priceOrPct(o.high)} ${o.mitigated ? '(mitigé)' : '(non mitigé)'}</li>`).join('');
+
+  $('tabReport').innerHTML = `
+    <h2>Synthèse</h2>
+    <p><strong>${sym}</strong> · ${tf} · ${prof.name} · ${a.candleCount} bougies · ${calibTxt}</p>
+    <p>Structure : <strong>${smc.structure.name}</strong>. Tendance de fond : <strong>${a.trendDir === 'up' ? 'haussière' : a.trendDir === 'down' ? 'baissière' : 'plate'}</strong>. Confiance ${a.confidence}%.</p>
+    <p>Biais retenu : <strong>${st.bias === 'up' ? 'haussier' : st.bias === 'down' ? 'baissier' : 'neutre'}</strong>. ${st.long.favored ? 'Setup achat privilégié.' : st.short.favored ? 'Setup vente privilégié.' : 'Aucun côté nettement favori.'}</p>
+
+    <h2>Structure détaillée</h2>
+    <h3>Sommets récents</h3>
+    <ul>${resLines || '<li>—</li>'}</ul>
+    <h3>Creux récents</h3>
+    <ul>${supLines || '<li>—</li>'}</ul>
+    ${smc.bosCHoCH.length ? `<h3>Événements de structure</h3><ul>${smc.bosCHoCH.slice(-4).map(e => `<li><strong>${e.type}</strong> ${e.dir === 'bullish' ? 'haussier' : 'baissier'} à ${priceOrPct(e.levelY)}</li>`).join('')}</ul>` : ''}
+
+    <h2>Order Blocks</h2>
+    ${smc.obs.bullish.length ? `<h3>Haussiers</h3><ul>${obList(smc.obs.bullish, '🟢')}</ul>` : ''}
+    ${smc.obs.bearish.length ? `<h3>Baissiers</h3><ul>${obList(smc.obs.bearish, '🔴')}</ul>` : ''}
+    ${!smc.obs.bullish.length && !smc.obs.bearish.length ? '<p>Aucun OB notable.</p>' : ''}
+
+    <h2>Fair Value Gaps ouverts</h2>
+    ${smc.fvgs.length ? `<ul>${smc.fvgs.map(fvg => `<li>${fvg.type === 'bullish' ? '🟢 Haussier' : '🔴 Baissier'} ${priceOrPct(Math.min(fvg.yTop, fvg.yBot))} – ${priceOrPct(Math.max(fvg.yTop, fvg.yBot))} (rempli ${fvg.fillPct}%)</li>`).join('')}</ul>` : '<p>Aucun FVG ouvert.</p>'}
+
+    <h2>Liquidité</h2>
+    ${smc.sweeps.length ? `<h3>Sweeps récents</h3><ul>${smc.sweeps.map(s => `<li>${s.label} à ${priceOrPct(s.levelY)} → ${s.type === 'bullish' ? 'signal haussier' : 'signal baissier'}</li>`).join('')}</ul>` : ''}
+    ${smc.equalLevels.length ? `<h3>Equal Highs / Lows</h3><ul>${smc.equalLevels.map(e => `<li>${e.type === 'H' ? 'Equal Highs' : 'Equal Lows'} à ${priceOrPct(e.y)} (${e.count} touches)</li>`).join('')}</ul>` : ''}
+
+    ${smc.pd ? `<h2>Premium / Discount</h2>
+      <p>Prix actuel dans la zone <strong>${smc.pd.zone}</strong> (${(smc.pd.pos*100).toFixed(0)}% du dernier range ${priceOrPct(smc.pd.hi)} → ${priceOrPct(smc.pd.lo)}).</p>
+      <p>${smc.pd.pos < 0.5 ? 'Zone de vente — privilégier les shorts sur rebond.' : 'Zone d\'achat — privilégier les longs sur repli.'}</p>` : ''}
+
+    <h2>Setups</h2>
+    <h3>🟢 Achat</h3>
+    <p>Entrée <strong>${st.long.entry !== null ? fmtPrice(st.long.entry) : priceOrPct(st.long.entryY)}</strong>, SL <strong>${st.long.sl !== null ? fmtPrice(st.long.sl) : priceOrPct(st.long.slY)}</strong>, TP1 <strong>${st.long.tp1 !== null ? fmtPrice(st.long.tp1) : priceOrPct(st.long.tp1Y)}</strong>, TP2 <strong>${st.long.tp2 !== null ? fmtPrice(st.long.tp2) : priceOrPct(st.long.tp2Y)}</strong>.
+    ${st.long.rr !== null ? `R:R ${st.long.rr.toFixed(2)}.` : ''} Score confluence ${st.long.confluence.score.toFixed(0)}/11.</p>
+
+    <h3>🔴 Vente</h3>
+    <p>Entrée <strong>${st.short.entry !== null ? fmtPrice(st.short.entry) : priceOrPct(st.short.entryY)}</strong>, SL <strong>${st.short.sl !== null ? fmtPrice(st.short.sl) : priceOrPct(st.short.slY)}</strong>, TP1 <strong>${st.short.tp1 !== null ? fmtPrice(st.short.tp1) : priceOrPct(st.short.tp1Y)}</strong>, TP2 <strong>${st.short.tp2 !== null ? fmtPrice(st.short.tp2) : priceOrPct(st.short.tp2Y)}</strong>.
+    ${st.short.rr !== null ? `R:R ${st.short.rr.toFixed(2)}.` : ''} Score confluence ${st.short.confluence.score.toFixed(0)}/11.</p>
+
+    <h2>Scénarios</h2>
+    <div class="scenario up"><div class="prob" style="--p:${(f.pUp*100).toFixed(0)}%"><span>${(f.pUp*100).toFixed(0)}%</span></div><div class="body"><h4>Haussier</h4><p>Rebond depuis OB/FVG haussier, cible liquidité au-dessus.</p></div></div>
+    <div class="scenario down"><div class="prob" style="--p:${(f.pDown*100).toFixed(0)}%"><span>${(f.pDown*100).toFixed(0)}%</span></div><div class="body"><h4>Baissier</h4><p>Rejet depuis OB/FVG baissier, cible liquidité en-dessous.</p></div></div>
+    <div class="scenario neu"><div class="prob" style="--p:${(f.pRange*100).toFixed(0)}%"><span>${(f.pRange*100).toFixed(0)}%</span></div><div class="body"><h4>Range</h4><p>Consolidation entre OB et FVG.</p></div></div>
+
+    <hr>
+    <div class="note">Analyse automatique basée sur traitement d'image + concepts SMC. Pas un conseil en investissement. Vérifiez manuellement avant tout trade.</div>
+  `;
+}
+
+/* ============ OVERLAY ============ */
+function drawOverlay(){
+  const o = S.octx, W = S.ov.width, H = S.ov.height;
+  o.clearRect(0, 0, W, H);
+  if(!S.analysis || !S.smc) return;
+  const lw = Math.max(1, W/1400);
+
+  // Order Blocks
+  if($('showOB').checked){
+    for(const ob of S.smc.obs.bullish){
+      o.fillStyle = ob.mitigated ? 'rgba(38,166,154,.06)' : 'rgba(38,166,154,.12)';
+      o.fillRect(0, ob.high, W, ob.low - ob.high);
+      o.strokeStyle = 'rgba(38,166,154,.6)';
+      o.lineWidth = lw;
+      o.setLineDash(ob.mitigated ? [3, 3] : []);
+      o.beginPath(); o.moveTo(0, ob.high); o.lineTo(W, ob.high); o.stroke();
+      o.beginPath(); o.moveTo(0, ob.low); o.lineTo(W, ob.low); o.stroke();
+      o.setLineDash([]);
+      o.font = `bold ${Math.max(9, W/120)}px -apple-system, sans-serif`;
+      o.fillStyle = '#26a69a';
+      o.fillText('OB+', 6, ob.high - 4);
+    }
+    for(const ob of S.smc.obs.bearish){
+      o.fillStyle = ob.mitigated ? 'rgba(239,83,80,.06)' : 'rgba(239,83,80,.12)';
+      o.fillRect(0, ob.high, W, ob.low - ob.high);
+      o.strokeStyle = 'rgba(239,83,80,.6)';
+      o.lineWidth = lw;
+      o.setLineDash(ob.mitigated ? [3, 3] : []);
+      o.beginPath(); o.moveTo(0, ob.high); o.lineTo(W, ob.high); o.stroke();
+      o.beginPath(); o.moveTo(0, ob.low); o.lineTo(W, ob.low); o.stroke();
+      o.setLineDash([]);
+      o.font = `bold ${Math.max(9, W/120)}px -apple-system, sans-serif`;
+      o.fillStyle = '#ef5350';
+      o.fillText('OB−', 6, ob.high - 4);
+    }
+  }
+
+  // FVG
+  if($('showFVG').checked){
+    for(const f of S.smc.fvgs){
+      o.fillStyle = 'rgba(38,198,218,.1)';
+      o.fillRect(0, Math.min(f.yTop, f.yBot), W, Math.abs(f.yBot - f.yTop));
+      o.strokeStyle = 'rgba(38,198,218,.5)';
+      o.lineWidth = lw;
+      o.setLineDash([4, 3]);
+      o.beginPath(); o.moveTo(0, f.yTop); o.lineTo(W, f.yTop); o.stroke();
+      o.beginPath(); o.moveTo(0, f.yBot); o.lineTo(W, f.yBot); o.stroke();
+      o.setLineDash([]);
+      o.font = `bold ${Math.max(9, W/120)}px -apple-system, sans-serif`;
+      o.fillStyle = '#26c6da';
+      o.fillText('FVG ' + (f.type === 'bullish' ? '+' : '−'), 6, Math.min(f.yTop, f.yBot) - 4);
+    }
+  }
+
+  // Sweeps et equal levels
+  if($('showLiq').checked){
+    for(const s of S.smc.sweeps.slice(-3)){
+      o.strokeStyle = 'rgba(171,71,188,.75)';
+      o.lineWidth = lw*1.5;
+      o.setLineDash([6, 3]);
+      o.beginPath(); o.moveTo(0, s.levelY); o.lineTo(W, s.levelY); o.stroke();
+      o.setLineDash([]);
+      o.font = `bold ${Math.max(9, W/120)}px -apple-system, sans-serif`;
+      o.fillStyle = '#ab47bc';
+      o.fillText(s.label, 6, s.levelY - 4);
+    }
+    for(const e of S.smc.equalLevels){
+      o.strokeStyle = 'rgba(171,71,188,.45)';
+      o.lineWidth = lw;
+      o.setLineDash([2, 4]);
+      o.beginPath(); o.moveTo(0, e.y); o.lineTo(W, e.y); o.stroke();
+      o.setLineDash([]);
+      o.font = `${Math.max(9, W/120)}px -apple-system, sans-serif`;
+      o.fillStyle = 'rgba(171,71,188,.85)';
+      o.fillText((e.type === 'H' ? 'EQH' : 'EQL'), 6, e.y - 3);
+    }
+  }
+
+  // BOS / CHoCH
+  if($('showBOS').checked){
+    for(const ev of S.smc.bosCHoCH.slice(-4)){
+      o.strokeStyle = ev.type === 'CHoCH' ? 'rgba(255,152,0,.8)' : 'rgba(102,187,106,.7)';
+      o.lineWidth = lw*1.3;
+      o.setLineDash(ev.type === 'CHoCH' ? [4, 3] : []);
+      o.beginPath(); o.moveTo(0, ev.levelY); o.lineTo(W, ev.levelY); o.stroke();
+      o.setLineDash([]);
+      o.font = `bold ${Math.max(9, W/120)}px -apple-system, sans-serif`;
+      o.fillStyle = ev.type === 'CHoCH' ? '#ff9800' : '#66bb6a';
+      o.fillText(ev.type, 6, ev.levelY - 3);
+    }
+  }
+
+  // Setup entrée
+  if($('showEntry').checked && S.setups){
+    const s = S.setups.long.favored ? S.setups.long : (S.setups.short.favored ? S.setups.short : null);
+    if(s){
+      const drawLine = (y, color, label, dashed) => {
+        o.strokeStyle = color;
+        o.lineWidth = lw*1.4;
+        o.setLineDash(dashed ? [6, 4] : []);
+        o.beginPath(); o.moveTo(0, y); o.lineTo(W, y); o.stroke();
+        o.setLineDash([]);
+        o.font = `bold ${Math.max(10, W/95)}px -apple-system, sans-serif`;
+        const tw = o.measureText(label).width;
+        o.fillStyle = color;
+        o.fillRect(W - tw - 16, y - 16, tw + 12, 15);
+        o.fillStyle = '#04121f';
+        o.fillText(label, W - tw - 10, y - 4);
+      };
+      [['entryY', '#2962ff', 'E'], ['slY', '#ef5350', 'SL'], ['tp1Y', '#26a69a', 'TP1']].forEach(([k, c, lbl]) => {
+        const y = s[k];
+        if(y === null || y === undefined) return;
+        const price = k === 'entryY' ? s.entry : k === 'slY' ? s.sl : s.tp1;
+        drawLine(y, c, `${lbl} ${price !== null ? fmtPrice(price) : priceOrPct(y)}`, k !== 'entryY');
+      });
+    }
+  }
+
+  // Calibration mode : crosshair + points
+  if(S.calibMode){
+    if(S.mouse){
+      o.strokeStyle = 'rgba(41,98,255,.7)';
+      o.lineWidth = 1;
+      o.beginPath(); o.moveTo(S.mouse.x, 0); o.lineTo(S.mouse.x, H); o.stroke();
+      o.beginPath(); o.moveTo(0, S.mouse.y); o.lineTo(W, S.mouse.y); o.stroke();
+      o.font = `bold ${Math.max(11, W/85)}px -apple-system, sans-serif`;
+      o.fillStyle = 'rgba(41,98,255,.95)';
+      o.fillRect(W - 130, S.mouse.y - 18, 120, 16);
+      o.fillStyle = '#fff';
+      o.fillText('Cliquez sur un label', W - 124, S.mouse.y - 6);
+    }
+    for(const p of S.calibPoints){
+      o.strokeStyle = '#ff9800';
+      o.lineWidth = 2;
+      o.beginPath(); o.arc(p.y, p.y, 4, 0, Math.PI*2); o.stroke();
+      o.fillStyle = 'rgba(255,152,0,.9)';
+      o.fillRect(4, p.y - 16, 90, 15);
+      o.fillStyle = '#000';
+      o.font = `bold ${Math.max(10, W/100)}px -apple-system`;
+      o.fillText('P' + (S.calibPoints.indexOf(p)+1) + ' : ' + p.price, 8, p.y - 4);
+    }
+  }
+}
+
+/* ============ CALIBRATION AU CLIC ============ */
+function startClickCalibration(){
+  if(!S.loaded) return;
+  S.calibMode = true;
+  S.calibPoints = [];
+  $('calibSteps').classList.remove('hidden');
+  $('calibState').textContent = 'Point 1/2 en attente — cliquez sur un label de l\'axe.';
+  $('btnClick').classList.add('active');
+  $('btnClick').textContent = '🎯 Annuler';
+  drawOverlay();
+}
+
+function cancelClickCalibration(){
+  S.calibMode = false;
+  S.calibPoints = [];
+  $('calibSteps').classList.add('hidden');
+  $('btnClick').classList.remove('active');
+  $('btnClick').textContent = '🎯 Calibrer au clic';
+  drawOverlay();
+}
+
+function onCalibClick(y){
+  if(!S.calibMode) return;
+  const valStr = prompt(
+    S.calibPoints.length === 0
+      ? 'Prix du premier label (ex. 65000) :'
+      : 'Prix du second label (ex. 62000) :'
+  );
+  if(valStr === null){ return; }
+  const price = parseFloat(valStr.replace(',', '.').replace(/\s/g, ''));
+  if(isNaN(price)){ alert('Valeur invalide.'); return; }
+  S.calibPoints.push({ y, price });
+  if(S.calibPoints.length === 1){
+    $('calibState').textContent = 'Point 2/2 en attente — cliquez sur un autre label.';
+    drawOverlay();
+  } else {
+    const [p1, p2] = S.calibPoints;
+    S.priceCal = {
+      mode: 'click',
+      p1: { y: p1.y, price: p1.price },
+      p2: { y: p2.y, price: p2.price },
+      source: 'click',
+      dec: inferDecimals(Math.max(Math.abs(p1.price), Math.abs(p2.price)))
+    };
+    $('pTop').value = p1.price.toFixed(S.priceCal.dec);
+    $('pBot').value = p2.price.toFixed(S.priceCal.dec);
+    $('calStatus').innerHTML = `<span style="color:var(--up)">✓ Calibré au clic : ${p1.price} et ${p2.price}</span>`;
+    cancelClickCalibration();
+    runAnalysis();
+  }
+}
+
+/* ============ OCR (fallback) ============ */
+async function loadTesseract(){
+  if(window.Tesseract) return window.Tesseract;
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload = () => res(window.Tesseract);
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function calibrateOCR(){
+  const btn = $('btnOCR');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>OCR…';
+  $('ocrProgress').classList.add('on');
+  try{
+    const T = await loadTesseract();
+    const W = S.cv.width, H = S.cv.height;
+    const L = S.layout;
+    const stripW = Math.max(70, Math.round(W * 0.09));
+
+    const mkStrip = (x0) => {
+      const c = document.createElement('canvas');
+      c.width = stripW*3; c.height = H*3;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(S.cv, x0, 0, stripW, H, 0, 0, stripW*3, H*3);
+      return c;
+    };
+
+    const rightCrop = mkStrip(W - stripW);
+    const leftCrop = mkStrip(0);
+
+    const progress = p => { $('ocrProgress').firstElementChild.style.width = Math.round(p*100) + '%'; };
+
+    const rightRes = await T.recognize(rightCrop, 'eng', {logger: m => { if(m.status === 'recognizing text') progress(m.progress*0.5); }});
+    const leftRes = await T.recognize(leftCrop, 'eng', {logger: m => { if(m.status === 'recognizing text') progress(0.5 + m.progress*0.5); }});
+
+    const parseNums = (data, yScale) => {
+      const nums = [];
+      for(const w of (data.words || [])){
+        if(w.confidence < 45) continue;
+        const txt = w.text.replace(/,/g, '.').replace(/[^\d.\-]/g, '');
+        const v = parseFloat(txt);
+        if(isNaN(v) || Math.abs(v) < 1e-4) continue;
+        const yc = (w.bbox.y0 + w.bbox.y1) / 2 / yScale;
+        nums.push({ y: yc, price: v });
+      }
+      return nums;
+    };
+
+    const rightNums = parseNums(rightRes.data, 3);
+    const leftNums = parseNums(leftRes.data, 3);
+
+    let nums = rightNums.length >= leftNums.length ? rightNums : leftNums;
+    const axisSide = rightNums.length >= leftNums.length ? 'droite' : 'gauche';
+
+    if(nums.length < 3){
+      $('calStatus').innerHTML = '<span style="color:var(--warn)">⚠ OCR insuffisant. Utilisez « Calibrer au clic ».</span>';
+      return;
+    }
+
+    // Tri et nettoyage : on garde les nombres qui forment une séquence monotone en y
+    nums.sort((a, b) => a.y - b.y);
+    // Détection des inversions (le prix doit être monotone)
+    const clean = [nums[0]];
+    for(let i = 1; i < nums.length; i++){
+      const prev = clean[clean.length-1];
+      const cur = nums[i];
+      if(cur.y - prev.y < 5) continue;
+      if(Math.sign(cur.price - prev.price) !== Math.sign(clean.length === 1 ? (cur.price - prev.price) : (clean[clean.length-1].price - clean[clean.length-2].price)) && clean.length >= 2) continue;
+      clean.push(cur);
+    }
+
+    if(clean.length < 2){
+      $('calStatus').innerHTML = '<span style="color:var(--warn)">⚠ OCR non monotone. Utilisez « Calibrer au clic ».</span>';
+      return;
+    }
+
+    // Régression linéaire sur les points propres
+    const n = clean.length;
+    let sy = 0, sp = 0, syy = 0, syp = 0;
+    for(const p of clean){ sy += p.y; sp += p.price; syy += p.y*p.y; syp += p.y*p.price; }
+    const a = (n*syp - sy*sp) / (n*syy - sy*sy || 1);
+    const b = (sp - a*sy) / n;
+
+    // Points p1 / p2 aux extrémités
+    const y1 = clean[0].y, y2 = clean[clean.length-1].y;
+    const p1p = a*y1 + b, p2p = a*y2 + b;
+    if(Math.abs(p2p - p1p) < 1e-6){
+      $('calStatus').innerHTML = '<span style="color:var(--warn)">⚠ OCR plat. Utilisez « Calibrer au clic ».</span>';
+      return;
+    }
+
+    S.priceCal = {
+      mode: 'ocr',
+      p1: { y: y1, price: p1p },
+      p2: { y: y2, price: p2p },
+      source: 'ocr',
+      dec: inferDecimals(Math.max(Math.abs(p1p), Math.abs(p2p)))
+    };
+    $('pTop').value = p1p.toFixed(S.priceCal.dec);
+    $('pBot').value = p2p.toFixed(S.priceCal.dec);
+    $('calStatus').innerHTML = `<span style="color:var(--up)">✓ OCR axe ${axisSide} : ${clean.length} points</span>`;
+
+    runAnalysis();
+  }catch(err){
+    console.error(err);
+    $('calStatus').innerHTML = '<span style="color:var(--warn)">⚠ OCR indisponible. Utilisez « Calibrer au clic ».</span>';
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = "🔍 Lire l'axe (OCR)";
+    $('ocrProgress').classList.remove('on');
+    $('ocrProgress').firstElementChild.style.width = '0';
+  }
+}
+
+/* ============ MANUEL ============ */
+function updateManualCal(){
+  const pT = parseFloat($('pTop').value);
+  const pB = parseFloat($('pBot').value);
+  if(isNaN(pT) || isNaN(pB) || !S.analysis) return;
+  S.priceCal = {
+    mode: 'manual',
+    p1: { y: S.analysis.minY, price: pT },
+    p2: { y: S.analysis.maxY, price: pB },
+    source: 'manual',
+    dec: inferDecimals(Math.max(Math.abs(pT), Math.abs(pB)))
+  };
+  $('calStatus').innerHTML = '<span style="color:var(--up)">✓ Calibré manuellement</span>';
+  runAnalysis();
+}
+
+/* ============ PROMPT IA ============ */
+function buildPrompt(){
+  const sym = $('symbol').value.trim() || 'non identifié';
+  const tf = $('timeframe').value.trim() || 'inconnu';
+  const prof = profile();
+  const a = S.analysis, smc = S.smc, st = S.setups;
+  if(!a) return '';
+  const fmtLvl = y => priceOrPct(y);
+  const obList = (list, tag) => list.map(o => `${tag} ${fmtLvl(o.low)} – ${fmtLvl(o.high)} ${o.mitigated ? '(mitigé)' : '(non mitigé)'}`).join('\n- ');
+
+  return `Tu es un analyste SMC/ICT senior. Analyse ce graphique TradingView en te basant sur les données SMC extraites automatiquement et sur ta lecture visuelle.
+
+Contexte :
+- Symbole : ${sym}
+- Timeframe : ${tf}
+- Classe : ${prof.name}
+- Bougies : ${a.candleCount}
+- Confiance : ${a.confidence}% (R² ${(a.r2*100).toFixed(0)}%)
+- Structure : ${smc.structure.name}
+- Biais : ${st.bias}
+
+Order Blocks haussiers :
+- ${obList(smc.obs.bullish, '🟢') || 'aucun'}
+
+Order Blocks baissiers :
+- ${obList(smc.obs.bearish, '🔴') || 'aucun'}
+
+FVGs ouverts :
+${smc.fvgs.map(f => `- ${f.type} ${fmtLvl(Math.min(f.yTop, f.yBot))} – ${fmtLvl(Math.max(f.yTop, f.yBot))} (rempli ${f.fillPct}%)`).join('\n') || 'aucun'}
+
+Sweeps de liquidité :
+${smc.sweeps.map(s => `- ${s.label} à ${fmtLvl(s.levelY)}`).join('\n') || 'aucun'}
+
+Equal Highs/Lows :
+${smc.equalLevels.map(e => `- ${e.type === 'H' ? 'EQH' : 'EQL'} à ${fmtLvl(e.y)} (${e.count})`).join('\n') || 'aucun'}
+
+BOS/CHoCH :
+${smc.bosCHoCH.map(e => `- ${e.type} ${e.dir} à ${fmtLvl(e.levelY)}`).join('\n') || 'aucun'}
+
+Premium/Discount : ${smc.pd ? `${smc.pd.zone} (${(smc.pd.pos*100).toFixed(0)}% du range)` : 'non déterminé'}
+
+Setups calculés :
+- Achat : entrée ${st.long.entry !== null ? fmtPrice(st.long.entry) : fmtLvl(st.long.entryY)}, SL ${st.long.sl !== null ? fmtPrice(st.long.sl) : fmtLvl(st.long.slY)}, TP1 ${st.long.tp1 !== null ? fmtPrice(st.long.tp1) : fmtLvl(st.long.tp1Y)}, R:R ${st.long.rr?.toFixed(2) ?? '—'}, score ${st.long.confluence.score.toFixed(0)}/11
+- Vente : entrée ${st.short.entry !== null ? fmtPrice(st.short.entry) : fmtLvl(st.short.entryY)}, SL ${st.short.sl !== null ? fmtPrice(st.short.sl) : fmtLvl(st.short.slY)}, TP1 ${st.short.tp1 !== null ? fmtPrice(st.short.tp1) : fmtLvl(st.short.tp1Y)}, R:R ${st.short.rr?.toFixed(2) ?? '—'}, score ${st.short.confluence.score.toFixed(0)}/11
+
+Produis une analyse SMC/ICT en Markdown avec ces sections :
+
+## 1. Lecture SMC
+- Confirme ou corrige les données extraites (OB, FVG, sweeps)
+- Identifie les zones de liquidité majeures (equal highs/lows, swings)
+
+## 2. Contexte structurel
+- Tendance, BOS/CHoCH, premium/discount
+- Alignement timeframe ou conflit
+
+## 3. Zones d'intérêt prioritaires
+- OB les plus pertinents (non mitigés)
+- FVG non comblés
+- Niveaux de liquidité à surveiller
+
+## 4. Scénarios SMC
+**Haussier** : déclencheur (BOS/CHoCH haussier, sweep creux), cible liquidité au-dessus, invalidation.
+**Baissier** : symétrique.
+**Range** : bornes OB/FVG.
+
+## 5. Setup optimal
+- Meilleur achat : entrée, SL, TP1, TP2, R:R
+- Meilleure vente : idem
+- Confirmation attendue (sweep + CHoCH, réaction OB, rejet FVG)
+
+## 6. Limites
+Ce qui n'est pas lisible / ambigu.
+
+Termine par un rappel que ceci n'est pas un conseil en investissement.`;
+}
+
+/* ============ APPELS IA ============ */
+async function callOpenAI(key, model, dataUrl, prompt){
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:model||'gpt-4o', max_tokens:2800, messages:[{role:'user', content:[
+      {type:'text', text:prompt}, {type:'image_url', image_url:{url:dataUrl, detail:'high'}}
+    ]}]})
+  });
+  const j = await r.json();
+  if(j.error) throw new Error(j.error.message);
+  return j.choices[0].message.content;
+}
+async function callAnthropic(key, model, dataUrl, prompt){
+  const b64 = dataUrl.split(',')[1];
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:model||'claude-sonnet-4-5', max_tokens:2800, messages:[{role:'user', content:[
+      {type:'image', source:{type:'base64', media_type:'image/jpeg', data:b64}}, {type:'text', text:prompt}
+    ]}]})
+  });
+  const j = await r.json();
+  if(j.error) throw new Error(j.error.message);
+  return j.content.map(c => c.text || '').join('');
+}
+async function callGemini(key, model, dataUrl, prompt){
+  const b64 = dataUrl.split(',')[1];
+  const m = model || 'gemini-2.0-flash';
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:'image/jpeg', data:b64}}]}]})
+  });
+  const j = await r.json();
+  if(j.error) throw new Error(j.error.message);
+  return j.candidates[0].content.parts.map(p => p.text || '').join('');
+}
+function mdToHtml(md){
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inline = s => s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>');
+  const lines = esc(md).split('\n');
+  let out = '', list = null;
+  const closeList = () => { if(list){ out += `</${list}>`; list = null; } };
+  for(const raw of lines){
+    const line = raw.trim();
+    if(!line){ closeList(); continue; }
+    let m;
+    if((m = line.match(/^###\s+(.*)$/))){ closeList(); out += `<h3>${inline(m[1])}</h3>`; }
+    else if((m = line.match(/^##\s+(.*)$/))){ closeList(); out += `<h2>${inline(m[1])}</h2>`; }
+    else if((m = line.match(/^#\s+(.*)$/))){ closeList(); out += `<h2>${inline(m[1])}</h2>`; }
+    else if((m = line.match(/^[-*]\s+(.*)$/))){ if(list !== 'ul'){closeList(); out += '<ul>'; list='ul';} out += `<li>${inline(m[1])}</li>`; }
+    else if((m = line.match(/^\d+[.)]\s+(.*)$/))){ if(list !== 'ol'){closeList(); out += '<ol>'; list='ol';} out += `<li>${inline(m[1])}</li>`; }
+    else { closeList(); out += `<p>${inline(line)}</p>`; }
+  }
+  closeList();
+  return out;
+}
+
+/* ============ ÉVÉNEMENTS ============ */
+$('drop').addEventListener('click', () => $('file').click());
+$('file').addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+['dragenter','dragover'].forEach(ev => $('drop').addEventListener(ev, e => {e.preventDefault(); $('drop').classList.add('hot');}));
+['dragleave','drop'].forEach(ev => $('drop').addEventListener(ev, e => {e.preventDefault(); $('drop').classList.remove('hot');}));
+$('drop').addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if(f) handleFile(f); });
+
+document.addEventListener('paste', e => {
+  for(const it of e.clipboardData.items) if(it.type.startsWith('image/')){ handleFile(it.getAsFile()); break; }
+});
+document.addEventListener('keydown', e => {
+  if((e.ctrlKey||e.metaKey) && e.key === 'o'){ e.preventDefault(); $('file').click(); }
+  if((e.ctrlKey||e.metaKey) && e.key === 'e'){ e.preventDefault(); if(!$('btnExport').disabled) exportReport(); }
+});
+
+$('btnClear').addEventListener('click', () => {
+  S.loaded = false; S.analysis = null; S.smc = null; S.setups = null; S.forecast = null; S.layout = null;
+  S.ctx.clearRect(0,0,S.cv.width,S.cv.height);
+  S.octx.clearRect(0,0,S.ov.width,S.ov.height);
+  $('canvasInner').style.display = 'none';
+  $('emptyChart').style.display = 'block';
+  $('btnAI').disabled = true; $('btnPrompt').disabled = true;
+  $('btnClear').disabled = true; $('btnOCR').disabled = true; $('btnClick').disabled = true; $('btnExport').disabled = true;
+  ['tabSignal','tabSmc','tabReport'].forEach(id => {
+    $(id).innerHTML = '<div class="empty-chart" style="padding:40px 20px">Chargez une image.</div>';
+  });
+  cancelClickCalibration();
+});
+
+$('btnClick').addEventListener('click', () => {
+  if(S.calibMode){ cancelClickCalibration(); }
+  else { startClickCalibration(); }
+});
+$('btnOCR').addEventListener('click', calibrateOCR);
+['pTop','pBot'].forEach(id => $(id).addEventListener('input', updateManualCal));
+
+$('zoom').addEventListener('input', e => {
+  S.zoom = e.target.value/100;
+  $('zoomVal').textContent = e.target.value + '%';
+  $('canvasInner').style.width = (S.zoom*100) + '%';
+});
+
+['showOB','showFVG','showLiq','showBOS','showEntry'].forEach(id => $(id).addEventListener('change', drawOverlay));
+['optOB','optFVG','optLiq','optBOS','optPD'].forEach(id => $(id).addEventListener('change', () => { if(S.analysis) renderAll(); }));
+
+$('assetType').addEventListener('change', () => { if(S.analysis){ renderAll(); drawOverlay(); } });
+$('symbol').addEventListener('input', () => { if(S.analysis) renderAll(); });
+$('timeframe').addEventListener('input', () => { if(S.analysis) renderAll(); });
+
+$('provider').addEventListener('change', e => {
+  const d = {openai:'gpt-4o', anthropic:'claude-sonnet-4-5', gemini:'gemini-2.0-flash'};
+  $('model').value = d[e.target.value];
+  const k = localStorage.getItem('cv_key_' + e.target.value);
+  $('apiKey').value = k || '';
+});
+
+$('btnPrompt').addEventListener('click', async () => {
+  try{
+    await navigator.clipboard.writeText(buildPrompt());
+    $('btnPrompt').textContent = '✓ Prompt copié';
+    setTimeout(() => $('btnPrompt').textContent = '📋 Copier le prompt', 1800);
+  }catch{ alert('Copie impossible.'); }
+});
+
+$('btnAI').addEventListener('click', async () => {
+  const key = $('apiKey').value.trim();
+  if(!key){ alert('Renseignez une clé API.'); return; }
+  localStorage.setItem('cv_key_' + $('provider').value, key);
+  const btn = $('btnAI');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Analyse…';
+  $('tabAi').innerHTML = '<div class="empty-chart"><span class="spin"></span>Analyse IA en cours…</div>';
+  document.querySelector('[data-tab="ai"]').click();
+  try{
+    const p = $('provider').value;
+    const model = $('model').value.trim();
+    const prompt = buildPrompt();
+    let out;
+    if(p === 'openai') out = await callOpenAI(key, model, S.imageDataURL, prompt);
+    else if(p === 'anthropic') out = await callAnthropic(key, model, S.imageDataURL, prompt);
+    else out = await callGemini(key, model, S.imageDataURL, prompt);
+    S.aiText = out;
+    $('tabAi').innerHTML = mdToHtml(out) + '<hr><div class="note">Analyse IA — pas un conseil en investissement.</div>';
+  }catch(err){
+    $('tabAi').innerHTML = `<div class="warnbox">Erreur : ${err.message}<br>Vérifiez la clé ou utilisez « Copier le prompt ».</div>`;
+  }finally{
+    btn.disabled = false; btn.textContent = "✨ Analyser avec l'IA";
+  }
+});
+
+$('btnHelp').addEventListener('click', () => $('helpModal').classList.add('on'));
+$('btnHelpClose').addEventListener('click', () => $('helpModal').classList.remove('on'));
+$('helpModal').addEventListener('click', e => { if(e.target.id === 'helpModal') $('helpModal').classList.remove('on'); });
+
+function exportReport(){
+  if(!S.analysis || !S.smc) return;
+  const sym = $('symbol').value.trim() || '—';
+  const tf = $('timeframe').value.trim();
+  const fmtLvl = y => priceOrPct(y);
+  const lines = [
+    `# ChartVision SMC — ${sym}${tf?' · '+tf:''}`,
+    `Date : ${new Date().toLocaleString('fr-FR')}`,
+    S.priceCal ? `Calibration : ${S.priceCal.source}` : 'Calibration : non calibré (% hauteur)',
+    '',
+    '## Structure',
+    `- Tendance : ${S.analysis.trendDir}`,
+    `- Structure : ${S.smc.structure.name}`,
+    `- Confiance : ${S.analysis.confidence}%`,
+    `- Biais : ${S.setups.bias}`,
+    '',
+    '## Order Blocks',
+    `### Haussiers`,
+    ...S.smc.obs.bullish.map(o => `- ${fmtLvl(o.low)} – ${fmtLvl(o.high)} ${o.mitigated ? '(mitigé)' : '(non mitigé)'} — ${o.touches} retours`),
+    `### Baissiers`,
+    ...S.smc.obs.bearish.map(o => `- ${fmtLvl(o.low)} – ${fmtLvl(o.high)} ${o.mitigated ? '(mitigé)' : '(non mitigé)'} — ${o.touches} retours`),
+    '',
+    '## FVG ouverts',
+    ...S.smc.fvgs.map(f => `- ${f.type} ${fmtLvl(Math.min(f.yTop, f.yBot))} – ${fmtLvl(Math.max(f.yTop, f.yBot))} (rempli ${f.fillPct}%)`),
+    '',
+    '## Liquidité',
+    ...S.smc.sweeps.map(s => `- ${s.label} à ${fmtLvl(s.levelY)}`),
+    ...S.smc.equalLevels.map(e => `- ${e.type === 'H' ? 'EQH' : 'EQL'} à ${fmtLvl(e.y)} (${e.count} touches)`),
+    '',
+    '## BOS / CHoCH',
+    ...S.smc.bosCHoCH.map(e => `- ${e.type} ${e.dir} à ${fmtLvl(e.levelY)}`),
+    '',
+    '## Premium / Discount',
+    S.smc.pd ? `Zone : ${S.smc.pd.zone} (${(S.smc.pd.pos*100).toFixed(0)}% du range ${fmtLvl(S.smc.pd.hi)} → ${fmtLvl(S.smc.pd.lo)})` : 'non déterminé',
+    '',
+    '## Setup ACHAT',
+    `- Entrée : ${S.setups.long.entry !== null ? fmtPrice(S.setups.long.entry) : fmtLvl(S.setups.long.entryY)}`,
+    `- SL : ${S.setups.long.sl !== null ? fmtPrice(S.setups.long.sl) : fmtLvl(S.setups.long.slY)}`,
+    `- TP1 : ${S.setups.long.tp1 !== null ? fmtPrice(S.setups.long.tp1) : fmtLvl(S.setups.long.tp1Y)}`,
+    `- TP2 : ${S.setups.long.tp2 !== null ? fmtPrice(S.setups.long.tp2) : fmtLvl(S.setups.long.tp2Y)}`,
+    `- R:R : ${S.setups.long.rr?.toFixed(2) ?? '—'}`,
+    `- Confluence : ${S.setups.long.confluence.score.toFixed(0)}/11`,
+    '',
+    '## Setup VENTE',
+    `- Entrée : ${S.setups.short.entry !== null ? fmtPrice(S.setups.short.entry) : fmtLvl(S.setups.short.entryY)}`,
+    `- SL : ${S.setups.short.sl !== null ? fmtPrice(S.setups.short.sl) : fmtLvl(S.setups.short.slY)}`,
+    `- TP1 : ${S.setups.short.tp1 !== null ? fmtPrice(S.setups.short.tp1) : fmtLvl(S.setups.short.tp1Y)}`,
+    `- TP2 : ${S.setups.short.tp2 !== null ? fmtPrice(S.setups.short.tp2) : fmtLvl(S.setups.short.tp2Y)}`,
+    `- R:R : ${S.setups.short.rr?.toFixed(2) ?? '—'}`,
+    `- Confluence : ${S.setups.short.confluence.score.toFixed(0)}/11`,
+  ];
+  const blob = new Blob([lines.join('\n')], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `chartvision-smc-${sym.replace(/\//g,'-')}-${Date.now()}.md`;
+  a.click();
+}
+$('btnExport').addEventListener('click', exportReport);
+
+$('ov').addEventListener('mousemove', e => {
+  if(!S.loaded) return;
+  const r = S.ov.getBoundingClientRect();
+  S.mouse = {x:(e.clientX-r.left)*(S.ov.width/r.width), y:(e.clientY-r.top)*(S.ov.height/r.height)};
+  drawOverlay();
+});
+$('ov').addEventListener('mouseleave', () => { S.mouse = null; drawOverlay(); });
+$('ov').addEventListener('click', e => {
+  if(!S.calibMode) return;
+  const r = S.ov.getBoundingClientRect();
+  const y = (e.clientY - r.top) * (S.ov.height / r.height);
+  onCalibClick(y);
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    ['signal','smc','report','ai'].forEach(k => {
+      const el = $('tab' + (k === 'smc' ? 'Smc' : k === 'report' ? 'Report' : k === 'signal' ? 'Signal' : 'Ai'));
+      if(el) el.classList.toggle('hidden', k !== tab.dataset.tab);
+    });
+  });
+});
+
+(function(){
+  const k = localStorage.getItem('cv_key_' + $('provider').value);
+  if(k) $('apiKey').value = k;
+})();
+</script>
+</body>
+</html>
